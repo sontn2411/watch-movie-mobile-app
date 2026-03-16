@@ -8,6 +8,7 @@ import styles from '@/styles/screens/Home.scss';
 import { useTestStore } from '@/store/useTestStore';
 import { useQuery } from '@tanstack/react-query';
 import { movieService } from '@/services/movieService';
+import { APP_CONFIG } from '@/constants/config';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -22,6 +23,12 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <View style={[styles['home-container'], { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View className="mb-4">
+        <Text className="text-center text-xs text-gray-400">
+          Env: {APP_CONFIG.ENVIRONMENT} | API: {APP_CONFIG.API_URL}
+        </Text>
+      </View>
+
       <View style={styles.card}>
         <Text style={styles['card-title']}>
           Zustand Demo 🐻
