@@ -1,11 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '@/components/common/Button';
-import styles from '@/styles/screens/HomeScreen.scss';
+import { RootStackParamList } from '@/navigation/RootNavigator';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import styles from '@/styles/screens/Home.scss';
 
+type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -19,12 +22,11 @@ export default function HomeScreen() {
         </Text>
       </View>
       
-      <View className="mt-8 bg-blue-100 p-4 rounded-xl items-center border border-blue-200">
-        <Text className="text-blue-900 font-bold">Tailwind still works too! 🚀</Text>
-      </View>
-
       <View className="items-center mt-4">
-        <Button title="Click Me" onPress={() => console.log('Button pressed')} />
+        <Button 
+          title="Go to Details" 
+          onPress={() => navigation.navigate('Details', { id: 'MOVIE-001', title: 'Spider-Man: No Way Home' })} 
+        />
       </View>
     </View>
   );
