@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '@/components/common/Button';
-import { COLORS } from '@/constants/theme';
-import styles from './HomeScreen.scss';
+import styles from '@/styles/screens/HomeScreen.scss';
+
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
