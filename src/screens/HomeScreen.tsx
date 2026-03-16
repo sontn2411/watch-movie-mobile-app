@@ -6,12 +6,19 @@ import { RootStackParamList } from '@/navigation/RootNavigator';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import styles from '@/styles/screens/Home.scss';
 import { useTestStore } from '@/store/useTestStore';
+import { useQuery } from '@tanstack/react-query';
+import { movieService } from '@/services/movieService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { count, increment, decrement, reset } = useTestStore();
+
+  const { data: movies, isLoading, isError, refetch } = useQuery({
+    queryKey: ['movies'],
+    queryFn: movieService.getMovies,
+  });
 
   return (
     <View style={[styles['home-container'], { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
@@ -45,15 +52,42 @@ export default function HomeScreen({ navigation }: Props) {
             <Text className="text-green-700 font-bold text-xl">+</Text>
           </TouchableOpacity>
         </View>
+      </View>
 
-        <Text className="text-gray-500 text-center text-xs">
-          State is shared globally via Zustand
+      <View className="mt-6 w-full px-4">
+        <Text className="text-xl font-bold mb-3 text-gray-800">
+          API Demo (React Query) 🌐
         </Text>
+
+        {isLoading ? (
+          <Text className="text-gray-500 italic">Finding movies...</Text>
+        ) : isError ? (
+          <View>
+            <Text className="text-red-500">Error fetching data</Text>
+            <TouchableOpacity onPress={() => refetch()} className="bg-red-500 p-2 rounded mt-2">
+              <Text className="text-white text-center">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            {movies?.map((movie) => (
+              <TouchableOpacity
+                key={movie.id}
+                className="p-4 border-b border-gray-50 active:bg-blue-50"
+                onPress={() => navigation.navigate('Details', { id: String(movie.id), title: movie.title })}
+              >
+                <Text className="font-semibold text-gray-800" numberOfLines={1}>
+                  🎬 {movie.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
       
-      <View className="items-center mt-8">
+      <View className="items-center mt-auto mb-4">
         <Button 
-          title="Go to Details" 
+          title="Go to Manual Details" 
           onPress={() => navigation.navigate('Details', { id: 'MOVIE-001', title: 'Spider-Man: No Way Home' })} 
         />
       </View>
