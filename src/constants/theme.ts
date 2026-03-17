@@ -1,8 +1,11 @@
 export const COLORS = {
-  primary: '#0ea5e9', // Tailwind sky-500
-  secondary: '#64748b', // Tailwind slate-500
-  background: '#f8fafc', // Tailwind slate-50
-  text: '#0f172a', // Tailwind slate-900
+  primary: '#3B82F6', // Vibrant Blue
+  secondary: '#60A5FA', // Sky Blue
+  accent: '#10B981', // Emerald Green (Play accent)
+  background: '#0B1120', // Deep Blue-Black
+  surface: '#1E293B', // Slate Blue Surface
+  text: '#F8FAFC',
+  textMuted: '#94A3B8',
 };
 
 export const SPACING = {

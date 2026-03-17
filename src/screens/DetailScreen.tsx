@@ -1,50 +1,390 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+  Dimensions,
+  StyleSheet,
+  StatusBar,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/RootNavigator';
+import { RootStackParamList } from '@/navigation/types';
+import { COLORS } from '@/constants/theme';
+import { useMovieDetails } from '@/hooks/useMovies';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+import { BlurView } from '@react-native-community/blur';
+import Animated, {
+  FadeInUp,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  useAnimatedScrollHandler,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
+import {
+  ChevronLeft,
+  Play,
+  Calendar,
+  Clock,
+  Star,
+  Monitor,
+  Info,
+  Layers,
+  Globe,
+  ArrowDownAz,
+  ArrowUpAz,
+  User,
+  Video,
+  MapPin,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react-native';
+
+const { width, height } = Dimensions.get('window');
+const BACKDROP_HEIGHT = height * 0.45;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Details'>;
+type TabType = 'info' | 'episodes';
 
-export default function DetailScreen({ route, navigation }: Props) {
-  const { id, title } = route.params;
+// Memoized Metadata Pill
+const MetaPill = React.memo(({ icon: Icon, text, color = COLORS.primary, bgColor = 'bg-white/5', borderColor = 'border-white/10', textColor = 'text-white' }: any) => (
+  <View className={`flex-row items-center ${bgColor} border ${borderColor} px-3 py-1.5 rounded-xl mr-2 mb-2`}>
+    <Icon color={color} size={14} fill={color === COLORS.primary && String(text).includes('.') ? color : 'none'} />
+    <Text className={`${textColor} text-[11px] font-bold ml-1.5`}>{text}</Text>
+  </View>
+));
 
-  return (
-    <View style={styles.container}>
-      <Text className="text-2xl font-bold text-gray-800 mb-4">
-        Details Screen
-      </Text>
-      <View className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 w-full max-w-sm">
-        <Text className="text-gray-500 text-sm mb-1">Item ID: {id}</Text>
-        <Text className="text-xl font-semibold text-blue-600 mb-6">{title}</Text>
-        
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.buttonText}>Go Back Home</Text>
+const DetailScreen = ({ route, navigation }: Props) => {
+  const { id } = route.params;
+  const insets = useSafeAreaInsets();
+  const { data, isLoading, isError } = useMovieDetails(id);
+  
+  const [activeTab, setActiveTab] = useState<TabType>('info');
+  const [activeServer, setActiveServer] = useState(0);
+  const [isDesc, setIsDesc] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Scroll values for Parallax
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
+  const animatedBackdropStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [-BACKDROP_HEIGHT, 0, BACKDROP_HEIGHT],
+      [-BACKDROP_HEIGHT / 2, 0, BACKDROP_HEIGHT * 0.75]
+    );
+    const scale = interpolate(
+      scrollY.value,
+      [-BACKDROP_HEIGHT, 0],
+      [2, 1],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ translateY }, { scale }],
+    };
+  });
+
+  const animatedHeaderStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(scrollY.value, [0, BACKDROP_HEIGHT * 0.5], [0, 1], Extrapolation.CLAMP);
+    return { opacity };
+  });
+
+  // Animation values for Play Button
+  const playButtonScale = useSharedValue(1);
+  const animatedPlayButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: playButtonScale.value }],
+  }));
+
+  const onPressIn = () => { playButtonScale.value = withSpring(0.95); };
+  const onPressOut = () => { playButtonScale.value = withSpring(1); };
+
+  // Memoized Sorted Episodes
+  const sortedEpisodes = useMemo(() => {
+    const episodes = data?.data.item.episodes?.[activeServer]?.server_data || [];
+    return [...episodes].sort((a, b) => {
+      const idxA = data?.data.item.episodes?.[activeServer]?.server_data.indexOf(a) ?? 0;
+      const idxB = data?.data.item.episodes?.[activeServer]?.server_data.indexOf(b) ?? 0;
+      return isDesc ? idxB - idxA : idxA - idxB;
+    });
+  }, [data, activeServer, isDesc]);
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-background items-center justify-center">
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text className="text-muted mt-4 font-bold tracking-widest">ĐANG TẢI PHIM...</Text>
+      </View>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <View className="flex-1 bg-background items-center justify-center p-6">
+        <Text className="text-white text-center text-lg font-bold mb-2">Đã có lỗi xảy ra</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} className="bg-primary px-8 py-3 rounded-2xl mt-4">
+          <Text className="text-white font-bold">Quay lại</Text>
         </TouchableOpacity>
       </View>
+    );
+  }
+
+  const movie = data.data.item;
+  const imageDomain = data.data.APP_DOMAIN_CDN_IMAGE;
+
+  return (
+    <View className="flex-1 bg-background">
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      {/* Sticky Top Header (Hidden initially) */}
+      <Animated.View 
+        style={[
+          { position: 'absolute', top: 0, left: 0, right: 0, height: insets.top + 56, zIndex: 20, backgroundColor: COLORS.background },
+          animatedHeaderStyle
+        ]}
+      >
+        <View style={{ marginTop: insets.top, height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20 }}>
+          <Text className="text-white font-black text-lg flex-1 mr-12" numberOfLines={1}>{movie.name}</Text>
+        </View>
+      </Animated.View>
+
+      {/* Floating Back Button */}
+      <View style={{ position: 'absolute', top: insets.top + 10, left: 20, zIndex: 30 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <BlurView blurType="dark" blurAmount={10} style={styles.headerIcon}>
+            <ChevronLeft color="white" size={24} />
+          </BlurView>
+        </TouchableOpacity>
+      </View>
+
+      <Animated.ScrollView 
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+      >
+        {/* Parallax Backdrop */}
+        <Animated.View style={[{ height: BACKDROP_HEIGHT }, animatedBackdropStyle]}>
+          <Image
+            source={{ uri: `${imageDomain}/uploads/movies/${movie.poster_url}` }}
+            className="w-full h-full"
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(11, 17, 32, 0.4)', COLORS.background]}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+
+        {/* Content Section */}
+        <View className="px-6 -mt-32">
+          {/* Poster & Basic Info */}
+          <Animated.View entering={FadeInUp.delay(200).duration(600)} className="flex-row items-end">
+            <View className="shadow-2xl shadow-black rounded-3xl overflow-hidden border border-white/20" style={{ width: 120, height: 180 }}>
+              <Image
+                source={{ uri: `${imageDomain}/uploads/movies/${movie.thumb_url}` }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+            </View>
+            <View className="flex-1 ml-5 mb-2">
+              <Text className="text-white text-2xl font-black leading-tight mb-1" style={{ fontFamily: 'Righteous' }} numberOfLines={2}>
+                {movie.name}
+              </Text>
+              <Text className="text-muted text-sm italic font-medium" numberOfLines={1}>{movie.origin_name}</Text>
+              <View className="mt-2 flex-row">
+                <View className="bg-primary/20 border border-primary/30 px-2 py-0.5 rounded-md">
+                   <Text className="text-primary text-[9px] font-black uppercase tracking-tighter">{movie.status === 'completed' ? 'Hoàn thành' : 'Đang chiếu'}</Text>
+                </View>
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* Quick Meta Row */}
+          <Animated.View entering={FadeInUp.delay(300).duration(600)} className="flex-row items-center mt-6 flex-wrap">
+            <MetaPill icon={Calendar} text={movie.year} />
+            <MetaPill icon={Clock} text={movie.time || 'N/A'} />
+            <MetaPill icon={Star} text={movie.tmdb?.vote_average || '7.5'} color={COLORS.primary} bgColor="bg-primary/10" borderColor="border-primary/20" textColor="text-primary" />
+            <MetaPill icon={Monitor} text={movie.quality} />
+          </Animated.View>
+
+          {/* Play CTA */}
+          <Animated.View entering={FadeInUp.delay(400).duration(600)} style={animatedPlayButtonStyle}>
+            <TouchableOpacity activeOpacity={0.9} onPressIn={onPressIn} onPressOut={onPressOut} className="mt-6">
+              <LinearGradient colors={[COLORS.primary, '#2563EB']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.playButton}>
+                <Play color="white" size={24} fill="white" />
+                <Text className="text-white font-black ml-3 text-lg tracking-widest uppercase">XEM NGAY</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Tabs */}
+          <View className="mt-8 flex-row border-b border-white/10">
+            <TouchableOpacity onPress={() => setActiveTab('info')} className={`pb-3 mr-8 border-b-2 ${activeTab === 'info' ? 'border-primary' : 'border-transparent'}`}>
+              <Text className={`text-sm font-black ${activeTab === 'info' ? 'text-white' : 'text-muted'}`}>THÔNG TIN</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setActiveTab('episodes')} className={`pb-3 border-b-2 ${activeTab === 'episodes' ? 'border-primary' : 'border-transparent'}`}>
+              <Text className={`text-sm font-black ${activeTab === 'episodes' ? 'text-white' : 'text-muted'}`}>TẬP PHIM</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Tab Content */}
+          <View className="mt-6">
+            {activeTab === 'info' ? (
+              <Animated.View entering={FadeIn}>
+                {/* Meta Extended */}
+                <View className="mb-6 flex-row flex-wrap">
+                  {movie.director?.map((d, i) => <MetaPill key={i} icon={Video} text={d} />)}
+                  {movie.country?.map((c) => <MetaPill key={c.id} icon={MapPin} text={c.name} />)}
+                </View>
+
+                {/* Genres */}
+                <View className="flex-row items-center mb-3">
+                  <Layers color={COLORS.primary} size={18} />
+                  <Text className="text-white text-lg font-bold ml-2">Thể loại</Text>
+                </View>
+                <View className="flex-row flex-wrap mb-6">
+                  {movie.category?.map((cat) => (
+                    <View key={cat.id} className="bg-surface border border-white/10 px-4 py-2 rounded-2xl mr-2 mb-2">
+                      <Text className="text-muted text-[11px] font-bold">{cat.name}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Plot Summary */}
+                <View className="flex-row items-center mb-3">
+                  <Info color={COLORS.primary} size={18} />
+                  <Text className="text-white text-lg font-bold ml-2">Nội dung</Text>
+                </View>
+                <TouchableOpacity 
+                   activeOpacity={0.9} 
+                   onPress={() => setIsExpanded(!isExpanded)}
+                   className="bg-white/5 p-5 rounded-3xl"
+                >
+                  <Text 
+                    className="text-muted leading-7 text-[13px] text-justify font-medium"
+                    numberOfLines={isExpanded ? undefined : 4}
+                  >
+                    {movie.content?.replace(/<[^>]*>?/gm, '')}
+                  </Text>
+                  <View className="flex-row items-center justify-center mt-3 border-t border-white/5 pt-3">
+                     <Text className="text-primary text-[10px] font-black uppercase tracking-widest mr-2">
+                        {isExpanded ? 'THU GỌN' : 'XEM THÊM'}
+                     </Text>
+                     {isExpanded ? <ChevronUp size={12} color={COLORS.primary} /> : <ChevronDown size={12} color={COLORS.primary} />}
+                  </View>
+                </TouchableOpacity>
+
+                {/* Actors */}
+                {movie.actor && movie.actor.length > 0 && (
+                  <View className="mt-8">
+                    <View className="flex-row items-center mb-4">
+                      <User color={COLORS.primary} size={18} />
+                      <Text className="text-white text-lg font-bold ml-2">Diễn viên</Text>
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                       {movie.actor.map((actor, idx) => (
+                         <View key={idx} className="bg-surface px-5 py-3 rounded-2xl mr-3 border border-white/5">
+                            <Text className="text-white text-xs font-bold">{actor}</Text>
+                         </View>
+                       ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </Animated.View>
+            ) : (
+              <Animated.View entering={FadeIn}>
+                {/* Server Selection */}
+                {movie.episodes && movie.episodes.length > 1 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
+                    {movie.episodes.map((server, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => { setActiveServer(idx); setActiveTab('episodes'); }}
+                        className={`px-6 py-2.5 rounded-2xl mr-3 border ${activeServer === idx ? 'bg-primary border-primary' : 'bg-white/5 border-white/10'}`}
+                      >
+                        <Text className={`text-[11px] font-black uppercase tracking-widest ${activeServer === idx ? 'text-white' : 'text-muted'}`}>
+                          {server.server_name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+
+                {/* Episodes Header with Sort */}
+                <View className="flex-row items-center justify-between mb-6 px-1">
+                  <View className="flex-row items-center">
+                    <Globe color={COLORS.primary} size={16} />
+                    <Text className="text-primary text-sm font-black ml-2 uppercase tracking-widest">
+                      {movie.episodes?.[activeServer]?.server_name || 'Tập phim'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setIsDesc(!isDesc)} className="flex-row items-center bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
+                    {isDesc ? <ArrowDownAz color={COLORS.primary} size={14} /> : <ArrowUpAz color={COLORS.primary} size={14} />}
+                    <Text className="text-muted text-[10px] font-bold ml-2 uppercase">{isDesc ? 'Mới nhất' : 'Cũ nhất'}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Episodes Grid */}
+                <View className="flex-row flex-wrap items-center">
+                  {sortedEpisodes.map((ep, eIdx) => {
+                    const btnSize = (width - 48 - 40) / 5;
+                    return (
+                      <TouchableOpacity
+                        key={eIdx}
+                        style={{ width: btnSize, height: btnSize }}
+                        className="bg-white/5 border border-white/10 rounded-xl items-center justify-center m-[4px]"
+                        activeOpacity={0.7}
+                      >
+                        <Text className="text-white text-[10px] font-black leading-none">{ep.name}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {(!movie.episodes || movie.episodes.length === 0) && (
+                  <View className="items-center py-10">
+                    <Text className="text-muted italic">Đang cập nhật tập phim...</Text>
+                  </View>
+                )}
+              </Animated.View>
+            )}
+          </View>
+        </View>
+      </Animated.ScrollView>
     </View>
   );
-}
+};
+
+export default DetailScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
+  headerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    overflow: 'hidden',
   },
-  button: {
-    backgroundColor: '#0ea5e9',
-    paddingVertical: 12,
-    borderRadius: 8,
+  playButton: {
+    height: 60,
+    borderRadius: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    justifyContent: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });

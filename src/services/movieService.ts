@@ -1,12 +1,6 @@
-import { ResponseItem, ResponseMovie, Slug } from '@/types/movies';
-import api from './api';
-import movieApi from './movieApi';
-
-export interface Movie {
-  id: number;
-  title: string;
-  body: string;
-}
+import { ResponseItem, ResponseMovie, ResponseMovieDetail, Slug } from '@/types/movies';
+import httpClient from './httpClient';
+import { ENDPOINTS } from '@/constants/endpoints';
 
 interface PayloadMovieList {
   slug: Slug;
@@ -18,12 +12,6 @@ interface PayloadMovieList {
 }
 
 export const movieService = {
-  getMovies: async (): Promise<Movie[]> => {
-    // Using posts as a demo for movies
-    const response = await api.get<Movie[]>('/posts?_limit=5');
-    return response.data;
-  },
-
   getListMovieBySlug: async ({
     slug,
     page = 1,
@@ -32,9 +20,9 @@ export const movieService = {
     country,
     year,
   }: PayloadMovieList): Promise<ResponseMovie> => {
-    const response = await movieApi.get(
-      `/danh-sach/${slug}?page=${page}&limit=${limit}&category=${category}&country=${country}&year=${year}`,
-    );
+    const response = await httpClient.get(`${ENDPOINTS.LIST}/${slug}`, {
+      params: { page, limit, category, country, year },
+    });
     return response.data;
   },
 
@@ -47,14 +35,14 @@ export const movieService = {
     page?: number;
     limit?: number;
   }): Promise<ResponseMovie> => {
-    const response = await movieApi.get(
-      `/tim-kiem/${keyword}?page=${page}&limit=${limit}`,
-    );
+    const response = await httpClient.get(`${ENDPOINTS.SEARCH}/${keyword}`, {
+      params: { page, limit },
+    });
     return response.data;
   },
 
-  getCategories: async () => {
-    const response = await movieApi.get<ResponseItem>('/the-loai');
+  getCategories: async (): Promise<ResponseItem> => {
+    const response = await httpClient.get(ENDPOINTS.CATEGORY);
     return response.data;
   },
 
@@ -70,15 +58,15 @@ export const movieService = {
     limit?: number;
     country?: string;
     year?: string;
-  }) => {
-    const response = await movieApi.get<ResponseMovie>(
-      `/the-loai/${category}?page=${page}&limit=${limit}&country=${country}&year=${year}`,
-    );
+  }): Promise<ResponseMovie> => {
+    const response = await httpClient.get(`${ENDPOINTS.CATEGORY}/${category}`, {
+      params: { page, limit, country, year },
+    });
     return response.data;
   },
 
-  getCountry: async () => {
-    const response = await movieApi.get<ResponseItem>('/quoc-gia');
+  getCountry: async (): Promise<ResponseItem> => {
+    const response = await httpClient.get(ENDPOINTS.COUNTRY);
     return response.data;
   },
 
@@ -92,15 +80,15 @@ export const movieService = {
     page?: number;
     limit?: number;
     year?: string;
-  }) => {
-    const response = await movieApi.get<ResponseMovie>(
-      `/quoc-gia/${country}?page=${page}&limit=${limit}&year=${year}`,
-    );
+  }): Promise<ResponseMovie> => {
+    const response = await httpClient.get(`${ENDPOINTS.COUNTRY}/${country}`, {
+      params: { page, limit, year },
+    });
     return response.data;
   },
 
-  getDetailMovie: async (slug: string) => {
-    const response = await movieApi.get<ResponseMovie>(`/phim/${slug}`);
+  getDetailMovie: async (slug: string): Promise<ResponseMovieDetail> => {
+    const response = await httpClient.get(`${ENDPOINTS.DETAIL}/${slug}`);
     return response.data;
   },
 };

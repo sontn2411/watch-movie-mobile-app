@@ -1,12 +1,9 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from '@/screens/HomeScreen';
+import TabNavigator from './TabNavigator';
 import DetailScreen from '@/screens/DetailScreen';
-
-export type RootStackParamList = {
-  Home: undefined;
-  Details: { id: string; title: string };
-};
+import SeeMoreScreen from '@/screens/SeeMoreScreen';
+import { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -15,22 +12,28 @@ export default function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#0ea5e9',
+          backgroundColor: '#0B1120',
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
           fontWeight: 'bold',
         },
+        headerShadowVisible: false,
       }}
     >
-      <Stack.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{ title: 'Home Page' }}
+      <Stack.Screen
+        name="Main"
+        component={TabNavigator}
+        options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="Details" 
-        component={DetailScreen} 
+      <Stack.Screen
+        name="Details"
+        component={DetailScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="SeeMore"
+        component={SeeMoreScreen}
         options={({ route }) => ({ title: route.params.title })}
       />
     </Stack.Navigator>

@@ -4,6 +4,15 @@ module.exports = {
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
+      colors: {
+        primary: '#3B82F6',
+        secondary: '#60A5FA',
+        accent: '#10B981',
+        background: '#0B1120',
+        surface: '#1E293B',
+        text: '#F8FAFC',
+        muted: '#94A3B8',
+      },
       fontSize: {
         's-xs': 'var(--scale-font-xs)',
         's-sm': 'var(--scale-font-sm)',

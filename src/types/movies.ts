@@ -63,7 +63,7 @@ export interface EpisodeItem {
   name: string;
 }
 
-interface MovieItem {
+export interface MovieItem {
   _id: string;
   name: string;
   slug: string;
@@ -165,7 +165,7 @@ export interface ResponseMovieDetail {
   message: string;
   data: {
     titlePage: string;
-    item: MovieItem;
+    item: MovieDetail;
     params: ParamsData;
     type_list: string;
     APP_DOMAIN_FRONTEND: string;
