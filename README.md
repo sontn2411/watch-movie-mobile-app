@@ -73,6 +73,29 @@ When you want to forcefully reload, for example to reset the state of your app, 
 - **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
 - **iOS**: Press <kbd>R</kbd> in iOS Simulator.
 
+## How to Change App Name
+
+To change the display name of your application (the name shown on the home screen), you need to update it in three places:
+
+1.  **`app.json`**: Update the `displayName` field.
+    ```json
+    {
+      "name": "WatchMovie",
+      "displayName": "Watch Movie"
+    }
+    ```
+2.  **Android**: Update `android/app/src/main/res/values/strings.xml`.
+    ```xml
+    <resources>
+        <string name="app_name">Watch Movie</string>
+    </resources>
+    ```
+3.  **iOS**: Update `ios/WatchMovie/Info.plist`.
+    ```xml
+    <key>CFBundleDisplayName</key>
+    <string>Watch Movie</string>
+    ```
+
 ## Congratulations! :tada:
 
 You've successfully run and modified your React Native App. :partying_face:
