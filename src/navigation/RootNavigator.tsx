@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import TabNavigator from './TabNavigator';
 import DetailScreen from '@/screens/DetailScreen';
 import SeeMoreScreen from '@/screens/SeeMoreScreen';
+import WatchScreen from '@/screens/WatchScreen';
 import { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -35,6 +36,11 @@ export default function RootNavigator() {
         name="SeeMore"
         component={SeeMoreScreen}
         options={({ route }) => ({ title: route.params.title })}
+      />
+      <Stack.Screen
+        name="Watch"
+        component={WatchScreen}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

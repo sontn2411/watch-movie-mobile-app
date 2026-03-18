@@ -218,7 +218,24 @@ const DetailScreen = ({ route, navigation }: Props) => {
 
           {/* Play CTA */}
           <Animated.View entering={FadeInUp.delay(400).duration(600)} style={animatedPlayButtonStyle}>
-            <TouchableOpacity activeOpacity={0.9} onPressIn={onPressIn} onPressOut={onPressOut} className="mt-6">
+            <TouchableOpacity 
+              activeOpacity={0.9} 
+              onPressIn={onPressIn} 
+              onPressOut={onPressOut} 
+              className="mt-6"
+              onPress={() => {
+                const firstEpisode = movie.episodes?.[0]?.server_data?.[0];
+                if (firstEpisode) {
+                  navigation.navigate('Watch', {
+                    url: firstEpisode.link_m3u8 || firstEpisode.link_embed,
+                    title: movie.name,
+                    currentEpisode: firstEpisode.name,
+                    slug: movie.slug,
+                    serverIndex: 0
+                  });
+                }
+              }}
+            >
               <LinearGradient colors={[COLORS.primary, '#2563EB']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.playButton}>
                 <Play color="white" size={24} fill="white" />
                 <Text className="text-white font-black ml-3 text-lg tracking-widest uppercase">XEM NGAY</Text>
@@ -343,6 +360,15 @@ const DetailScreen = ({ route, navigation }: Props) => {
                         style={{ width: btnSize, height: btnSize }}
                         className="bg-white/5 border border-white/10 rounded-xl items-center justify-center m-[4px]"
                         activeOpacity={0.7}
+                        onPress={() => {
+                          navigation.navigate('Watch', {
+                            url: ep.link_m3u8 || ep.link_embed,
+                            title: movie.name,
+                            currentEpisode: ep.name,
+                            slug: movie.slug,
+                            serverIndex: activeServer
+                          });
+                        }}
                       >
                         <Text className="text-white text-[10px] font-black leading-none">{ep.name}</Text>
                       </TouchableOpacity>
