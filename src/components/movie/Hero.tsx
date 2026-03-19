@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Play, Plus, Info } from 'lucide-react-native';
 import { MovieItem } from '@/types/movies';
@@ -7,14 +7,13 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
 
-const { width, height } = Dimensions.get('window');
-
 interface HeroProps {
   movie: MovieItem;
   imageDomain: string;
 }
 
 const Hero: React.FC<HeroProps> = ({ movie, imageDomain }) => {
+  const { width, height } = useWindowDimensions();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 

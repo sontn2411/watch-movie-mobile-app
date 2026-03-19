@@ -9,6 +9,7 @@ import {
   StatusBar,
   ScrollView,
   TouchableWithoutFeedback,
+  useWindowDimensions,
 } from 'react-native';
 import Video, { VideoRef, ResizeMode } from 'react-native-video';
 import Slider from '@react-native-community/slider';
@@ -39,11 +40,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-const { width, height } = Dimensions.get('window');
-
 type Props = NativeStackScreenProps<RootStackParamList, 'Watch'>;
 
 const WatchScreen = ({ route, navigation }: Props) => {
+  const { width, height } = useWindowDimensions();
   const { url, title, currentEpisode, slug, serverIndex } = route.params;
   const insets = useSafeAreaInsets();
   const videoRef = useRef<VideoRef>(null);

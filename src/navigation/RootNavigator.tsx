@@ -4,13 +4,19 @@ import TabNavigator from './TabNavigator';
 import DetailScreen from '@/screens/DetailScreen';
 import SeeMoreScreen from '@/screens/SeeMoreScreen';
 import WatchScreen from '@/screens/WatchScreen';
+import WelcomeScreen, { storage } from '@/screens/WelcomeScreen';
+import AuthScreen from '@/screens/AuthScreen';
 import { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
+  // const hasSeenWelcome = storage.getBoolean('hasSeenWelcome');
+
   return (
     <Stack.Navigator
+      // initialRouteName={hasSeenWelcome ? 'Main' : 'Welcome'}
+      initialRouteName={'Welcome'}
       screenOptions={{
         headerStyle: {
           backgroundColor: '#0B1120',
@@ -22,6 +28,16 @@ export default function RootNavigator() {
         headerShadowVisible: false,
       }}
     >
+      <Stack.Screen
+        name="Welcome"
+        component={WelcomeScreen}
+        options={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}
+      />
+      <Stack.Screen
+        name="Auth"
+        component={AuthScreen}
+        options={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}
+      />
       <Stack.Screen
         name="Main"
         component={TabNavigator}

@@ -18,6 +18,7 @@ const config = {
   },
   resolver: {
     sourceExts: [...sourceExts, 'scss', 'sass'],
+    assetExts: [...assetExts, 'webp'],
   },
 };
 
