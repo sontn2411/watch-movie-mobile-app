@@ -1,4 +1,9 @@
-import { ResponseItem, ResponseMovie, ResponseMovieDetail, Slug } from '@/types/movies';
+import {
+  ResponseItem,
+  ResponseMovie,
+  ResponseMovieDetail,
+  Slug,
+} from '@/types/movies';
 import httpClient from './httpClient';
 import { ENDPOINTS } from '@/constants/endpoints';
 
@@ -35,8 +40,8 @@ export const movieService = {
     page?: number;
     limit?: number;
   }): Promise<ResponseMovie> => {
-    const response = await httpClient.get(`${ENDPOINTS.SEARCH}/${keyword}`, {
-      params: { page, limit },
+    const response = await httpClient.get(`${ENDPOINTS.SEARCH}`, {
+      params: { keyword, page, limit },
     });
     return response.data;
   },
