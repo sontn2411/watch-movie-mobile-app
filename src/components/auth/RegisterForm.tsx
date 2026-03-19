@@ -4,28 +4,30 @@ import { User, Mail, Lock } from 'lucide-react-native';
 import { AuthInput } from './AuthInput';
 import { COLORS } from '@/constants/theme';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useAppStore } from '@/store/useAppStore';
 
 interface RegisterFormProps {
   onSuccess: () => void;
   onSwitchMode: () => void;
 }
 
-export const RegisterForm = ({ onSuccess, onSwitchMode }: RegisterFormProps) => {
-  const [username, setUsername] = useState('');
+export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchMode }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const setUserToken = useAppStore(state => state.setUserToken);
 
-  const handleSubmit = () => {
-    if (!username || !email || !password || !confirmPassword) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
+  const handleSubmit = async () => {
+    if (!email || !password || password !== confirmPassword) {
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin và đảm bảo mật khẩu khớp.');
       return;
     }
-    if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
-      return;
-    }
+    setLoading(true);
+    // Simulation: Save token and success
+    setUserToken('user_token_demo');
     onSuccess();
+    setLoading(false);
   };
 
   return (
@@ -43,13 +45,6 @@ export const RegisterForm = ({ onSuccess, onSwitchMode }: RegisterFormProps) => 
         entering={FadeInDown.delay(500).duration(800)}
         className="space-y-4"
       >
-        <AuthInput
-          icon={User}
-          placeholder="Tên đăng nhập"
-          value={username}
-          onChangeText={setUsername}
-        />
-
         <AuthInput
           icon={Mail}
           placeholder="Email"

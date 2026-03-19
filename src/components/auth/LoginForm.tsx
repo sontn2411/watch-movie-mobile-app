@@ -4,27 +4,34 @@ import { User, Lock } from 'lucide-react-native';
 import { AuthInput } from './AuthInput';
 import { COLORS } from '@/constants/theme';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useAppStore } from '@/store/useAppStore';
 
 interface LoginFormProps {
   onSuccess: () => void;
+  onForgotPassword: () => void;
   onSwitchMode: () => void;
 }
 
-export const LoginForm = ({ onSuccess, onSwitchMode }: LoginFormProps) => {
-  const [username, setUsername] = useState('');
+export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onForgotPassword, onSwitchMode }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const setUserToken = useAppStore(state => state.setUserToken);
 
-  const handleSubmit = () => {
-    if (!username && !email) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tên đăng nhập hoặc email');
+  const handleSubmit = async () => {
+    if (!email) {
+      Alert.alert('Lỗi', 'Vui lòng nhập email');
       return;
     }
     if (!password) {
       Alert.alert('Lỗi', 'Vui lòng nhập mật khẩu');
       return;
     }
+    setLoading(true);
+    // Simulation: Save token and success
+    setUserToken('user_token_demo');
     onSuccess();
+    setLoading(false);
   };
 
   return (
@@ -44,12 +51,9 @@ export const LoginForm = ({ onSuccess, onSwitchMode }: LoginFormProps) => {
       >
         <AuthInput
           icon={User}
-          placeholder="Tên đăng nhập hoặc Email"
-          value={email || username}
-          onChangeText={text => {
-            if (text.includes('@')) setEmail(text);
-            else setUsername(text);
-          }}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
         />
 
         <AuthInput
@@ -61,7 +65,10 @@ export const LoginForm = ({ onSuccess, onSwitchMode }: LoginFormProps) => {
         />
       </Animated.View>
 
-      <TouchableOpacity className="items-end mb-8">
+      <TouchableOpacity 
+        onPress={onForgotPassword}
+        className="items-end mb-8"
+      >
         <Text className="text-primary font-bold">Quên mật khẩu?</Text>
       </TouchableOpacity>
 

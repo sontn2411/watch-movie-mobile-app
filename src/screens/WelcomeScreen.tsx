@@ -13,10 +13,11 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
 import { COLORS } from '@/constants/theme';
 import { createMMKV } from 'react-native-mmkv';
+import { useAppStore } from '@/store/useAppStore';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import Orientation from 'react-native-orientation-locker';
 
-// Optional: you can extract this somewhere else if you want to use it globally
+// Keep for legacy compatibility if needed, but prefer useAppStore
 export const storage = createMMKV();
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Welcome'>;
@@ -30,9 +31,11 @@ const WelcomeScreen = ({ navigation }: Props) => {
     Orientation.unlockAllOrientations();
   }, []);
 
+  const setHasSeenWelcome = useAppStore(state => state.setHasSeenWelcome);
+
   const handleGuest = () => {
-    // Save to MMKV so next time it skips Welcome
-    storage.set('hasSeenWelcome', true);
+    // Save to store so next time it skips Welcome
+    setHasSeenWelcome(true);
     // Navigate to Home
     navigation.replace('Main');
   };

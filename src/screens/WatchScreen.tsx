@@ -140,13 +140,8 @@ const WatchScreen = ({ route, navigation }: Props) => {
   const sortedEpisodes = useMemo(() => {
     const episodes =
       data?.data.item.episodes?.[activeServer]?.server_data || [];
-    return [...episodes].sort((a, b) => {
-      const idxA =
-        data?.data.item.episodes?.[activeServer]?.server_data.indexOf(a) ?? 0;
-      const idxB =
-        data?.data.item.episodes?.[activeServer]?.server_data.indexOf(b) ?? 0;
-      return isDesc ? idxB - idxA : idxA - idxB;
-    });
+    if (!isDesc) return episodes;
+    return [...episodes].reverse();
   }, [data, activeServer, isDesc]);
 
   const handleEpisodePress = (ep: any) => {

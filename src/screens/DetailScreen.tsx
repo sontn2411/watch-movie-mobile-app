@@ -9,6 +9,7 @@ import {
   Dimensions,
   StyleSheet,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
@@ -110,11 +111,8 @@ const DetailScreen = ({ route, navigation }: Props) => {
   // Memoized Sorted Episodes
   const sortedEpisodes = useMemo(() => {
     const episodes = data?.data.item.episodes?.[activeServer]?.server_data || [];
-    return [...episodes].sort((a, b) => {
-      const idxA = data?.data.item.episodes?.[activeServer]?.server_data.indexOf(a) ?? 0;
-      const idxB = data?.data.item.episodes?.[activeServer]?.server_data.indexOf(b) ?? 0;
-      return isDesc ? idxB - idxA : idxA - idxB;
-    });
+    if (!isDesc) return episodes;
+    return [...episodes].reverse();
   }, [data, activeServer, isDesc]);
 
   if (isLoading) {
@@ -159,9 +157,15 @@ const DetailScreen = ({ route, navigation }: Props) => {
       {/* Floating Back Button */}
       <View style={{ position: 'absolute', top: insets.top + 10, left: 20, zIndex: 30 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <BlurView blurType="dark" blurAmount={10} style={styles.headerIcon}>
-            <ChevronLeft color="white" size={24} />
-          </BlurView>
+          {Platform.OS === 'ios' ? (
+            <BlurView blurType="dark" blurAmount={10} style={styles.headerIcon}>
+              <ChevronLeft color="white" size={24} />
+            </BlurView>
+          ) : (
+            <View style={[styles.headerIcon, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+              <ChevronLeft color="white" size={24} />
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -196,7 +200,7 @@ const DetailScreen = ({ route, navigation }: Props) => {
               />
             </View>
             <View className="flex-1 ml-5 mb-2">
-              <Text className="text-white text-2xl font-black leading-tight mb-1" style={{ fontFamily: 'Righteous' }} numberOfLines={2}>
+              <Text className="text-white text-2xl font-black leading-tight mb-1" numberOfLines={2}>
                 {movie.name}
               </Text>
               <Text className="text-muted text-sm italic font-medium" numberOfLines={1}>{movie.origin_name}</Text>
@@ -259,8 +263,8 @@ const DetailScreen = ({ route, navigation }: Props) => {
               <Animated.View entering={FadeIn}>
                 {/* Meta Extended */}
                 <View className="mb-6 flex-row flex-wrap">
-                  {movie.director?.map((d, i) => <MetaPill key={i} icon={Video} text={d} />)}
-                  {movie.country?.map((c) => <MetaPill key={c.id} icon={MapPin} text={c.name} />)}
+                  {movie.director?.map((d, i) => d && <MetaPill key={i} icon={Video} text={d} />)}
+                  {movie.country?.map((c) => c && <MetaPill key={c.id} icon={MapPin} text={c.name} />)}
                 </View>
 
                 {/* Genres */}

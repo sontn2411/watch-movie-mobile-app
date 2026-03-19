@@ -53,7 +53,6 @@ const Hero: React.FC<HeroProps> = ({ movie, imageDomain }) => {
       <View className="absolute bottom-0 left-0 right-0 px-6 pb-8 items-center">
         <Text
           className="text-white text-3xl font-bold text-center mb-2"
-          style={{ fontFamily: 'Righteous' }}
         >
           {movie.name}
         </Text>

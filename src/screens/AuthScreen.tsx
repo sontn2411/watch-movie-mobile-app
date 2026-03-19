@@ -6,15 +6,16 @@ import {
   Platform,
   ScrollView,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
 import { ChevronLeft } from 'lucide-react-native';
-import { storage } from '@/screens/WelcomeScreen';
 import Animated, { FadeIn, Layout } from 'react-native-reanimated';
 
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
+import { useAppStore } from '@/store/useAppStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
@@ -22,9 +23,10 @@ type AuthMode = 'login' | 'register';
 
 const AuthScreen = ({ navigation }: Props) => {
   const [mode, setMode] = useState<AuthMode>('login');
+  const setHasSeenWelcome = useAppStore(state => state.setHasSeenWelcome);
 
   const handleSuccess = () => {
-    storage.set('hasSeenWelcome', true);
+    setHasSeenWelcome(true);
     navigation.replace('Main');
   };
 
@@ -64,6 +66,7 @@ const AuthScreen = ({ navigation }: Props) => {
             {mode === 'login' ? (
               <LoginForm
                 onSuccess={handleSuccess}
+                onForgotPassword={() => Alert.alert('Thông báo', 'Tính năng đang được phát triển')}
                 onSwitchMode={() => setMode('register')}
               />
             ) : (
