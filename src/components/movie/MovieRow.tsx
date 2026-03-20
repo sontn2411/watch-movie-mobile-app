@@ -12,6 +12,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { Slug } from '@/types/movies';
 import { Skeleton } from '../common/Skeleton';
 import { isPad, getResponsiveWidth } from '@/utils/device';
+import { useTheme } from '@/hooks/useTheme';
 
 export type SliderVariant = 'portrait' | 'landscape' | 'ranked' | 'featured';
 
@@ -33,22 +34,10 @@ const MovieRow: React.FC<MovieRowProps> = ({
   variant = 'portrait',
 }) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors } = useTheme();
 
   if (loading) {
-    const skeletonW =
-      variant === 'landscape' 
-        ? getResponsiveWidth(256, 350) 
-        : variant === 'featured' 
-          ? getResponsiveWidth(176, 240) 
-          : getResponsiveWidth(128, 180);
-          
-    const skeletonH =
-      variant === 'landscape' 
-        ? getResponsiveWidth(144, 200) 
-        : variant === 'featured' 
-          ? getResponsiveWidth(235, 320) 
-          : getResponsiveWidth(192, 270);
-    
+    // ... skeleton logic ...
     return (
       <View className="mb-8">
         <View className="px-6 mb-4">
@@ -62,13 +51,13 @@ const MovieRow: React.FC<MovieRowProps> = ({
           {[1, 2, 3, 4, 5].map(i => (
             <View key={i} className="mr-4">
               <Skeleton 
-                width={skeletonW} 
-                height={skeletonH} 
+                width={getResponsiveWidth(128, 180)} 
+                height={getResponsiveWidth(192, 270)} 
                 borderRadius={16} 
               />
               <View className="mt-2">
-                <Skeleton width={skeletonW * 0.8} height={12} borderRadius={4} className="mb-1" />
-                <Skeleton width={skeletonW * 0.5} height={10} borderRadius={4} />
+                <Skeleton width={100} height={12} borderRadius={4} className="mb-1" />
+                <Skeleton width={60} height={10} borderRadius={4} />
               </View>
             </View>
           ))}
@@ -82,7 +71,7 @@ const MovieRow: React.FC<MovieRowProps> = ({
   return (
     <View className="mb-8">
       <View className="flex-row justify-between items-center px-6 mb-4">
-        <Text className="text-lg font-bold text-white tracking-tight">{title}</Text>
+        <Text className="text-lg font-bold text-text tracking-tight">{title}</Text>
         <TouchableOpacity
           className="flex-row items-center"
           onPress={() => navigation.navigate('SeeMore', { title, slug })}
@@ -90,9 +79,10 @@ const MovieRow: React.FC<MovieRowProps> = ({
           <Text className="text-primary text-xs font-black uppercase tracking-widest mr-1">
             Xem thêm
           </Text>
-          <ChevronRight color={COLORS.primary} size={14} />
+          <ChevronRight color={colors.primary} size={14} />
         </TouchableOpacity>
       </View>
+
 
       <ScrollView
         horizontal

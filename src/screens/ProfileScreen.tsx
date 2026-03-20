@@ -37,6 +37,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { SettingItem } from '@/components/common/SettingItem';
 import { useToastStore } from '@/store/useToastStore';
+import { useTheme } from '@/hooks/useTheme';
 
 const AVATAR_URL = 'https://api.dicebear.com/7.x/avataaars/png?seed=WatchMovie&backgroundColor=transparent';
 
@@ -58,6 +59,7 @@ const ProfileScreen = () => {
   const [notifications, setNotifications] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const { showToast } = useToastStore();
+  const { colors, isDark } = useTheme();
   const isLoggedIn = !!userToken;
 
   useEffect(() => {
@@ -103,12 +105,12 @@ const ProfileScreen = () => {
         className="items-center py-10"
       >
         <View className="w-24 h-24 bg-white/5 rounded-full items-center justify-center mb-6 border border-white/10">
-          <User color={COLORS.textMuted} size={48} className="opacity-40" />
+          <User color={colors.textMuted} size={48} className="opacity-40" />
         </View>
-        <Text className="text-white text-2xl font-black text-center mb-2">
+        <Text className="text-text text-2xl font-black text-center mb-2">
           Tham gia cùng WatchMovie
         </Text>
-        <Text className="text-gray-400 text-center text-sm leading-5 mb-10 px-4">
+        <Text className="text-muted text-center text-sm leading-5 mb-10 px-4">
           Đăng nhập để lưu phim yêu thích, xem tiếp lịch sử và nhận đề xuất cá nhân hóa dành riêng cho bạn.
         </Text>
         
@@ -134,21 +136,21 @@ const ProfileScreen = () => {
       </Animated.View>
 
       <SectionHeader title="Cài đặt chung" />
-      <View className="rounded-3xl bg-white/5 border border-white/10 overflow-hidden">
+      <View className="rounded-3xl bg-surface border border-border overflow-hidden">
         <SettingItem 
           icon={<Moon color="#818CF8" size={20} />} 
           label="Chế độ tối" 
           rightElement={
             <Switch 
-              value={theme === 'dark'}
+              value={isDark}
               onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
-              trackColor={{ false: '#2D3748', true: '#818CF8' }}
+              trackColor={{ false: '#D1D5DB', true: '#818CF8' }}
               thumbColor="white"
             />
           }
         />
         <SettingItem 
-          icon={<Globe color={COLORS.secondary} size={20} />} 
+          icon={<Globe color={colors.secondary} size={20} />} 
           label="Ngôn ngữ" 
           value={language === 'vi' ? "Tiếng Việt (VN)" : "English (US)"}
           onPress={() => setLanguage(language === 'vi' ? 'en' : 'vi')}
@@ -157,9 +159,9 @@ const ProfileScreen = () => {
       </View>
       
       <SectionHeader title="Trợ giúp" />
-      <View className="rounded-3xl bg-white/5 border border-white/10 overflow-hidden">
+      <View className="rounded-3xl bg-surface border border-border overflow-hidden">
         <SettingItem 
-          icon={<Info color={COLORS.textMuted} size={20} />} 
+          icon={<Info color={colors.textMuted} size={20} />} 
           label="Về ứng dụng" 
           isLast
         />
@@ -172,11 +174,11 @@ const ProfileScreen = () => {
       {/* User Card */}
       <Animated.View 
         entering={FadeIn.duration(600)}
-        className="mx-6 p-6 rounded-3xl bg-white/5 border border-white/10 flex-row items-center"
+        className="mx-6 p-6 rounded-3xl bg-surface border border-border flex-row items-center"
       >
         <View className="relative">
           <View className="w-20 h-20 rounded-full border-2 border-primary p-1">
-            <View className="w-full h-full rounded-full bg-surface overflow-hidden">
+            <View className="w-full h-full rounded-full bg-surface-alt overflow-hidden">
               <Image
                 source={{ uri: AVATAR_URL }}
                 className="w-full h-full"
@@ -189,8 +191,8 @@ const ProfileScreen = () => {
         </View>
         
         <View className="ml-5 flex-1">
-          <Text className="text-white text-xl font-bold">{user?.username || 'Người dùng'}</Text>
-          <Text className="text-gray-400 text-sm mt-1">{user?.email || 'Chưa cập nhật email'}</Text>
+          <Text className="text-text text-xl font-bold">{user?.username || 'Người dùng'}</Text>
+          <Text className="text-muted text-sm mt-1">{user?.email || 'Chưa cập nhật email'}</Text>
           <View className="flex-row items-center mt-3">
             <View className="bg-primary/20 px-3 py-1 rounded-full border border-primary/20">
               <Text className="text-primary text-[10px] font-black uppercase tracking-wider">
@@ -198,7 +200,7 @@ const ProfileScreen = () => {
               </Text>
             </View>
             <TouchableOpacity className="ml-3 p-1">
-              <Share2 color={COLORS.textMuted} size={16} />
+              <Share2 color={colors.textMuted} size={16} />
             </TouchableOpacity>
           </View>
         </View>
@@ -207,14 +209,14 @@ const ProfileScreen = () => {
       {/* Quick Stats */}
       <View className="flex-row px-6 mt-6 gap-3">
         {[
-          { label: 'Phim đã lưu', value: '42', color: COLORS.primary },
+          { label: 'Phim đã lưu', value: '42', color: colors.primary },
           { label: 'Yêu thích', value: '15', color: '#EF4444' },
-          { label: 'Tải về', value: '7', color: COLORS.accent },
+          { label: 'Tải về', value: '7', color: colors.accent },
         ].map((item, i) => (
           <TouchableOpacity 
             key={i}
             activeOpacity={0.8}
-            className="flex-1 bg-white/5 border border-white/10 rounded-2xl py-4 items-center"
+            className="flex-1 bg-surface border border-border rounded-2xl py-4 items-center"
           >
             <Text style={{ color: item.color }} className="text-xl font-black">{item.value}</Text>
             <Text className="text-gray-500 text-[10px] font-bold uppercase mt-1">{item.label}</Text>
@@ -224,9 +226,9 @@ const ProfileScreen = () => {
 
       {/* Settings Sections */}
       <SectionHeader title="Hoạt động" />
-      <View className="mx-6 rounded-3xl bg-white/5 border border-white/10 overflow-hidden">
+      <View className="mx-6 rounded-3xl bg-surface border border-border overflow-hidden">
         <SettingItem 
-          icon={<PlayCircle color={COLORS.primary} size={20} />} 
+          icon={<PlayCircle color={colors.primary} size={20} />} 
           label="Lịch sử xem phim" 
           value="128 bộ phim đã xem"
         />
@@ -236,7 +238,7 @@ const ProfileScreen = () => {
           value="15 bộ phim"
         />
         <SettingItem 
-          icon={<Download color={COLORS.accent} size={20} />} 
+          icon={<Download color={colors.accent} size={20} />} 
           label="Phim đã tải về" 
           value="7 bộ phim"
           isLast
@@ -244,15 +246,15 @@ const ProfileScreen = () => {
       </View>
 
       <SectionHeader title="Tùy chọn hiển thị" />
-      <View className="mx-6 rounded-3xl bg-white/5 border border-white/10 overflow-hidden">
+      <View className="mx-6 rounded-3xl bg-surface border border-border overflow-hidden">
         <SettingItem 
-          icon={<Bell color={COLORS.primary} size={20} />} 
+          icon={<Bell color={colors.primary} size={20} />} 
           label="Thông báo đẩy" 
           rightElement={
             <Switch 
               value={notifications}
               onValueChange={setNotifications}
-              trackColor={{ false: '#2D3748', true: COLORS.primary }}
+              trackColor={{ false: isDark ? '#2D3748' : '#D1D5DB', true: colors.primary }}
               thumbColor="white"
             />
           }
@@ -262,15 +264,15 @@ const ProfileScreen = () => {
           label="Chế độ tối" 
           rightElement={
             <Switch 
-              value={theme === 'dark'}
+              value={isDark}
               onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
-              trackColor={{ false: '#2D3748', true: '#818CF8' }}
+              trackColor={{ false: isDark ? '#2D3748' : '#D1D5DB', true: '#818CF8' }}
               thumbColor="white"
             />
           }
         />
         <SettingItem 
-          icon={<Globe color={COLORS.secondary} size={20} />} 
+          icon={<Globe color={colors.secondary} size={20} />} 
           label="Ngôn ngữ" 
           value={language === 'vi' ? "Tiếng Việt (VN)" : "English (US)"}
           onPress={() => setLanguage(language === 'vi' ? 'en' : 'vi')}
@@ -279,17 +281,17 @@ const ProfileScreen = () => {
       </View>
 
       <SectionHeader title="Hệ hệ thống" />
-      <View className="mx-6 rounded-3xl bg-white/5 border border-white/10 overflow-hidden">
+      <View className="mx-6 rounded-3xl bg-surface border border-border overflow-hidden">
         <SettingItem 
-          icon={<User color={COLORS.textMuted} size={20} />} 
+          icon={<User color={colors.textMuted} size={20} />} 
           label="Hồ sơ người dùng" 
         />
         <SettingItem 
-          icon={<Shield color={COLORS.textMuted} size={20} />} 
+          icon={<Shield color={colors.textMuted} size={20} />} 
           label="Quyền riêng tư" 
         />
         <SettingItem 
-          icon={<HelpCircle color={COLORS.textMuted} size={20} />} 
+          icon={<HelpCircle color={colors.textMuted} size={20} />} 
           label="Trợ giúp & Phản hồi" 
           isLast
         />
@@ -311,8 +313,6 @@ const ProfileScreen = () => {
 
   return (
     <View className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" />
-      
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ 
@@ -322,7 +322,7 @@ const ProfileScreen = () => {
       >
         {/* Header Title */}
         <View className="px-6 mb-8">
-          <Text className="text-white text-3xl font-black tracking-wider uppercase">
+          <Text className="text-text text-3xl font-black tracking-wider uppercase">
             CÁ NHÂN
           </Text>
         </View>
@@ -331,8 +331,8 @@ const ProfileScreen = () => {
 
         {/* Footer */}
         <View className="items-center mt-8 opacity-20">
-          <Film color="white" size={24} />
-          <Text className="text-white text-[10px] font-black tracking-[4px] mt-2 uppercase">
+          <Film color={colors.text} size={24} />
+          <Text className="text-text text-[10px] font-black tracking-[4px] mt-2 uppercase">
             WatchMovie v1.2.0
           </Text>
         </View>

@@ -14,6 +14,7 @@ import { RootStackParamList } from '@/navigation/types';
 import LinearGradient from 'react-native-linear-gradient';
 import { Play } from 'lucide-react-native';
 import { MovieItem } from '@/types/movies';
+import { useTheme } from '@/hooks/useTheme';
 
 interface BaseCardProps {
   movie: MovieItem;
@@ -44,6 +45,7 @@ const BaseCard: React.FC<BaseCardProps> = ({
 }) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors, isDark } = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -82,7 +84,7 @@ const BaseCard: React.FC<BaseCardProps> = ({
       >
         <View
           style={[styles.cardContainer, { aspectRatio }]}
-          className="bg-surface border border-white/5"
+          className="bg-surface border border-border"
         >
           <Image
             source={{ uri: `${imageDomain}/uploads/movies/${movie.thumb_url}` }}
@@ -91,7 +93,7 @@ const BaseCard: React.FC<BaseCardProps> = ({
           />
 
           <LinearGradient
-            colors={['transparent', 'rgba(11, 17, 32, 0.9)']}
+            colors={['transparent', isDark ? 'rgba(11, 17, 32, 0.9)' : 'rgba(0, 0, 0, 0.4)']}
             style={[styles.gradient, { height: gradientHeight }]}
           />
 
@@ -122,7 +124,7 @@ const BaseCard: React.FC<BaseCardProps> = ({
           {children}
         </View>
         <Text
-          className="text-white mt-2 text-xs font-semibold leading-tight"
+          className="text-text mt-2 text-xs font-semibold leading-tight"
           numberOfLines={2}
         >
           {movie.name}

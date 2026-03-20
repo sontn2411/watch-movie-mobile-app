@@ -9,22 +9,26 @@ import {
 import { BlurView } from '@react-native-community/blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon, { IconName } from '@/components/common/Icon';
-import { COLORS } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { borderTopColor: colors.border }]}>
       {Platform.OS === 'ios' ? (
         <BlurView
           style={StyleSheet.absoluteFill}
-          blurType="dark"
+          blurType={isDark ? 'dark' : 'light'}
           blurAmount={20}
-          reducedTransparencyFallbackColor="black"
+          reducedTransparencyFallbackColor={isDark ? 'black' : 'white'}
         />
       ) : (
-        <View style={[StyleSheet.absoluteFill, styles.androidBackground]} />
+        <View style={[
+          StyleSheet.absoluteFill, 
+          { backgroundColor: isDark ? 'rgba(15, 15, 35, 0.95)' : 'rgba(255, 255, 255, 0.97)' }
+        ]} />
       )}
 
       <View
@@ -93,12 +97,12 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
               <Icon
                 name={iconName}
                 size={24}
-                color={isFocused ? COLORS.primary : COLORS.textMuted}
+                color={isFocused ? colors.primary : colors.textMuted}
               />
               <Text
                 style={[
                   styles.label,
-                  { color: isFocused ? COLORS.primary : COLORS.textMuted },
+                  { color: isFocused ? colors.primary : colors.textMuted },
                 ]}
               >
                 {label}
@@ -119,10 +123,6 @@ const styles = StyleSheet.create({
     right: 0,
     overflow: 'hidden',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  androidBackground: {
-    backgroundColor: 'rgba(15, 15, 35, 0.9)',
   },
   tabContent: {
     flexDirection: 'row',

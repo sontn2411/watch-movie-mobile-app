@@ -5,13 +5,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#3B82F6',
-        secondary: '#60A5FA',
-        accent: '#10B981',
-        background: '#0B1120',
-        surface: '#1E293B',
-        text: '#F8FAFC',
-        muted: '#94A3B8',
+        primary: 'var(--color-primary)',
+        secondary: 'var(--color-secondary)',
+        accent: 'var(--color-accent)',
+        background: 'var(--color-bg)',
+        surface: 'var(--color-surface)',
+        'surface-alt': 'var(--color-surface-alt)',
+        text: 'var(--color-text)',
+        muted: 'var(--color-muted)',
+        border: 'var(--color-border)',
       },
       fontSize: {
         's-xs': 'var(--scale-font-xs)',

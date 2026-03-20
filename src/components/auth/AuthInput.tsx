@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, TextInputProps } from 'react-native';
 import { LucideIcon, Eye, EyeOff } from 'lucide-react-native';
-import { COLORS } from '@/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 interface AuthInputProps extends TextInputProps {
   icon: LucideIcon;
@@ -20,17 +20,18 @@ export const AuthInput = ({
 }: AuthInputProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { colors } = useTheme();
 
   const inputStyle = {
     borderColor: isError 
       ? '#EF4444' 
-      : (isFocused ? COLORS.primary : 'rgba(255, 255, 255, 0.1)'),
+      : (isFocused ? colors.primary : colors.border),
     backgroundColor: isError
       ? 'rgba(239, 68, 68, 0.05)'
-      : (isFocused ? 'rgba(225, 29, 72, 0.05)' : 'rgba(255, 255, 255, 0.05)'),
+      : (isFocused ? `${colors.primary}10` : colors.surface),
   };
 
-  const iconColor = isError ? '#EF4444' : (isFocused ? COLORS.primary : COLORS.textMuted);
+  const iconColor = isError ? '#EF4444' : (isFocused ? colors.primary : colors.textMuted);
 
 
   return (
@@ -45,8 +46,8 @@ export const AuthInput = ({
       />
       <TextInput
         placeholder={placeholder}
-        placeholderTextColor="rgba(148, 163, 184, 0.5)"
-        className="flex-1 text-white text-base py-1"
+        placeholderTextColor={colors.textMuted}
+        className="flex-1 text-text text-base py-1"
         value={value}
         onChangeText={onChangeText}
         onFocus={() => setIsFocused(true)}
@@ -67,3 +68,4 @@ export const AuthInput = ({
     </View>
   );
 };
+

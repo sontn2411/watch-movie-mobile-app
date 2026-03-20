@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { User, Mail, Lock } from 'lucide-react-native';
 import { AuthInput } from './AuthInput';
-import { COLORS } from '@/constants/theme';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useAppStore } from '@/store/useAppStore';
 import authService from '@/services/auth';
 import { useToastStore } from '@/store/useToastStore';
+import { useTheme } from '@/hooks/useTheme';
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -20,7 +20,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchM
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
-  const { setAuth } = useAppStore();
+  const { colors } = useTheme();
 
   const { showToast } = useToastStore();
 
@@ -114,10 +114,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchM
   return (
     <View className="flex-1">
       <Animated.View entering={FadeInDown.delay(300).duration(800)}>
-        <Text className="text-white text-4xl font-black mb-2 tracking-wider">
+        <Text className="text-text text-4xl font-black mb-2 tracking-wider">
           ĐĂNG KÝ
         </Text>
-        <Text className="text-gray-400 mb-10 text-base leading-6">
+        <Text className="text-muted mb-10 text-base leading-6">
           Tạo tài khoản mới để trải nghiệm thế giới điện ảnh vô tận.
         </Text>
       </Animated.View>
@@ -171,9 +171,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchM
           disabled={loading}
           className="bg-primary py-4 rounded-2xl items-center shadow-lg mb-8"
           style={{
-            backgroundColor: COLORS.primary,
+            backgroundColor: colors.primary,
             opacity: loading ? 0.7 : 1,
-            shadowColor: COLORS.primary,
+            shadowColor: colors.primary,
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.3,
             shadowRadius: 12,
@@ -190,7 +190,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchM
         </TouchableOpacity>
 
         <View className="flex-row justify-center items-center">
-          <Text className="text-gray-400 text-base">
+          <Text className="text-muted text-base">
             Đã có tài khoản?{' '}
           </Text>
           <TouchableOpacity onPress={onSwitchMode} disabled={loading}>
@@ -203,4 +203,5 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchM
     </View>
   );
 };
+
 

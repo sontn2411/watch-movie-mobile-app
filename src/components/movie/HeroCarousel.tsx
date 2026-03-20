@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, FlatList, Dimensions, Animated, Image } from 'react-native';
 import Hero from './Hero';
 import { MovieItem } from '@/types/movies';
+import { useTheme } from '@/hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
@@ -13,6 +14,7 @@ interface HeroCarouselProps {
 const HeroCarousel: React.FC<HeroCarouselProps> = ({ movies, imageDomain }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
+  const { colors, isDark } = useTheme();
 
   // Prefetch images for smoother loading
   useEffect(() => {
@@ -56,13 +58,16 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ movies, imageDomain }) => {
       />
 
       {/* Pagination Dots */}
-      <View className=" flex-row justify-center gap-2">
+      <View className="flex-row justify-center gap-2 mt-4">
         {movies.map((_, index) => (
           <View
             key={index}
             className={`h-1.5 rounded-full ${
-              activeIndex === index ? 'w-4 bg-primary' : 'w-1.5 bg-white/30'
+              activeIndex === index ? 'w-4' : 'w-1.5'
             }`}
+            style={{ 
+              backgroundColor: activeIndex === index ? colors.primary : (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)')
+            }}
           />
         ))}
       </View>

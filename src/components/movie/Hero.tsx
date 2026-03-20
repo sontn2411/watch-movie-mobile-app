@@ -6,6 +6,7 @@ import { MovieItem } from '@/types/movies';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
+import { useTheme } from '@/hooks/useTheme';
 
 interface HeroProps {
   movie: MovieItem;
@@ -16,6 +17,7 @@ const Hero: React.FC<HeroProps> = ({ movie, imageDomain }) => {
   const { width, height } = useWindowDimensions();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors, isDark } = useTheme();
 
   if (!movie) return null;
 
@@ -33,14 +35,14 @@ const Hero: React.FC<HeroProps> = ({ movie, imageDomain }) => {
       <LinearGradient
         colors={[
           'transparent',
-          'rgba(11, 17, 32, 0.4)',
-          'rgba(11, 17, 32, 0.8)',
-          'rgba(11, 17, 32, 1)',
+          isDark ? 'rgba(11, 17, 32, 0.4)' : 'rgba(255, 255, 255, 0.1)',
+          isDark ? 'rgba(11, 17, 32, 0.8)' : 'rgba(255, 255, 255, 0.4)',
+          colors.background,
         ]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
       <LinearGradient
-        colors={['transparent', 'rgba(11, 17, 32, 0.9)', 'rgba(11, 17, 32, 1)']}
+        colors={['transparent', isDark ? 'rgba(11, 17, 32, 0.9)' : 'rgba(255, 255, 255, 0.6)', colors.background]}
         style={{
           position: 'absolute',
           bottom: 0,
@@ -52,17 +54,17 @@ const Hero: React.FC<HeroProps> = ({ movie, imageDomain }) => {
 
       <View className="absolute bottom-0 left-0 right-0 px-6 pb-8 items-center">
         <Text
-          className="text-white text-3xl font-bold text-center mb-2"
+          className="text-text text-3xl font-black text-center mb-2"
         >
           {movie.name}
         </Text>
 
         <View className="flex-row items-center mb-6">
-          <Text className="text-accent font-bold text-xs uppercase mr-2">
+          <Text className="text-primary font-black text-xs uppercase mr-2 tracking-widest">
             {movie.quality}
           </Text>
-          <View className="w-1 h-1 rounded-full bg-slate-500 mr-2" />
-          <Text className="text-slate-300 text-xs">
+          <View className="w-1 h-1 rounded-full bg-muted mx-2" />
+          <Text className="text-muted text-xs font-bold">
             {movie.category
               ?.map(c => c.name)
               .slice(0, 2)
@@ -72,8 +74,8 @@ const Hero: React.FC<HeroProps> = ({ movie, imageDomain }) => {
 
         <View className="flex-row items-center justify-center space-x-4">
           <TouchableOpacity className="items-center px-4 py-2">
-            <Plus color="white" size={24} />
-            <Text className="text-white text-[10px] mt-1">Danh sách</Text>
+            <Plus color={colors.text} size={24} />
+            <Text className="text-text text-[10px] font-bold mt-1">Danh sách</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -83,15 +85,23 @@ const Hero: React.FC<HeroProps> = ({ movie, imageDomain }) => {
                 title: movie.name,
               })
             }
-            className="flex-row items-center bg-white px-6 py-2.5 rounded-full"
+            className="flex-row items-center bg-primary px-8 py-3 rounded-2xl shadow-lg"
           >
-            <Play color="#3B82F6" size={20} fill="#3B82F6" />
-            <Text className="text-primary font-bold ml-2">Phát</Text>
+            <Play color="white" size={20} fill="white" />
+            <Text className="text-white font-bold ml-2 uppercase tracking-widest">Phát</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity className="items-center px-4 py-2">
-            <Info color="white" size={24} />
-            <Text className="text-white text-[10px] mt-1">Thông tin</Text>
+          <TouchableOpacity 
+            onPress={() =>
+              navigation.navigate('Details', {
+                id: movie.slug,
+                title: movie.name,
+              })
+            }
+            className="items-center px-4 py-2"
+          >
+            <Info color={colors.text} size={24} />
+            <Text className="text-text text-[10px] font-bold mt-1">Thông tin</Text>
           </TouchableOpacity>
         </View>
       </View>

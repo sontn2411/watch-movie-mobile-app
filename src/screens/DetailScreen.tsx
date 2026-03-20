@@ -16,6 +16,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { COLORS } from '@/constants/theme';
 import { useMovieDetails } from '@/hooks/useMovies';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/hooks/useTheme';
 import LinearGradient from 'react-native-linear-gradient';
 import { BlurView } from '@react-native-community/blur';
 import Animated, {
@@ -54,17 +55,26 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Details'>;
 type TabType = 'info' | 'episodes';
 
 // Memoized Metadata Pill
-const MetaPill = React.memo(({ icon: Icon, text, color = COLORS.primary, bgColor = 'bg-white/5', borderColor = 'border-white/10', textColor = 'text-white' }: any) => (
-  <View className={`flex-row items-center ${bgColor} border ${borderColor} px-3 py-1.5 rounded-xl mr-2 mb-2`}>
-    <Icon color={color} size={14} fill={color === COLORS.primary && String(text).includes('.') ? color : 'none'} />
-    <Text className={`${textColor} text-[11px] font-bold ml-1.5`}>{text}</Text>
-  </View>
-));
+const MetaPill = React.memo(({ icon: Icon, text, color, bgColor, borderColor, textColor }: any) => {
+  const { colors, isDark } = useTheme();
+  const activeColor = color || colors.primary;
+  const activeBg = bgColor || (isDark ? 'bg-white/5' : 'bg-black/5');
+  const activeBorder = borderColor || (isDark ? 'border-white/10' : 'border-black/5');
+  const activeText = textColor || 'text-text';
+
+  return (
+    <View className={`flex-row items-center ${activeBg} border ${activeBorder} px-3 py-1.5 rounded-xl mr-2 mb-2`}>
+      <Icon color={activeColor} size={14} fill={activeColor === colors.primary && String(text).includes('.') ? activeColor : 'none'} />
+      <Text className={`${activeText} text-[11px] font-bold ml-1.5`}>{text}</Text>
+    </View>
+  );
+});
 
 const DetailScreen = ({ route, navigation }: Props) => {
   const { id } = route.params;
   const insets = useSafeAreaInsets();
   const { data, isLoading, isError } = useMovieDetails(id);
+  const { colors, isDark } = useTheme();
   
   const [activeTab, setActiveTab] = useState<TabType>('info');
   const [activeServer, setActiveServer] = useState(0);
@@ -139,18 +149,18 @@ const DetailScreen = ({ route, navigation }: Props) => {
   const imageDomain = data.data.APP_DOMAIN_CDN_IMAGE;
 
   return (
-    <View className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />
       
       {/* Sticky Top Header (Hidden initially) */}
       <Animated.View 
         style={[
-          { position: 'absolute', top: 0, left: 0, right: 0, height: insets.top + 56, zIndex: 20, backgroundColor: COLORS.background },
+          { position: 'absolute', top: 0, left: 0, right: 0, height: insets.top + 56, zIndex: 20, backgroundColor: colors.background },
           animatedHeaderStyle
         ]}
       >
         <View style={{ marginTop: insets.top, height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20 }}>
-          <Text className="text-white font-black text-lg flex-1 mr-12" numberOfLines={1}>{movie.name}</Text>
+          <Text className="text-text font-black text-lg flex-1 mr-12" numberOfLines={1}>{movie.name}</Text>
         </View>
       </Animated.View>
 
@@ -158,12 +168,12 @@ const DetailScreen = ({ route, navigation }: Props) => {
       <View style={{ position: 'absolute', top: insets.top + 10, left: 20, zIndex: 30 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           {Platform.OS === 'ios' ? (
-            <BlurView blurType="dark" blurAmount={10} style={styles.headerIcon}>
-              <ChevronLeft color="white" size={24} />
+            <BlurView blurType={isDark ? 'dark' : 'light'} blurAmount={10} style={styles.headerIcon}>
+              <ChevronLeft color={colors.text} size={24} />
             </BlurView>
           ) : (
-            <View style={[styles.headerIcon, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-              <ChevronLeft color="white" size={24} />
+            <View style={[styles.headerIcon, { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)' }]}>
+              <ChevronLeft color={colors.text} size={24} />
             </View>
           )}
         </TouchableOpacity>
@@ -183,7 +193,7 @@ const DetailScreen = ({ route, navigation }: Props) => {
             resizeMode="cover"
           />
           <LinearGradient
-            colors={['transparent', 'rgba(11, 17, 32, 0.4)', COLORS.background]}
+            colors={['transparent', isDark ? 'rgba(11, 17, 32, 0.4)' : 'rgba(255, 255, 255, 0.2)', colors.background]}
             style={StyleSheet.absoluteFill}
           />
         </Animated.View>
@@ -200,7 +210,7 @@ const DetailScreen = ({ route, navigation }: Props) => {
               />
             </View>
             <View className="flex-1 ml-5 mb-2">
-              <Text className="text-white text-2xl font-black leading-tight mb-1" numberOfLines={2}>
+              <Text className="text-text text-2xl font-black leading-tight mb-1" numberOfLines={2}>
                 {movie.name}
               </Text>
               <Text className="text-muted text-sm italic font-medium" numberOfLines={1}>{movie.origin_name}</Text>
@@ -248,12 +258,12 @@ const DetailScreen = ({ route, navigation }: Props) => {
           </Animated.View>
 
           {/* Tabs */}
-          <View className="mt-8 flex-row border-b border-white/10">
+          <View className="mt-8 flex-row border-b border-border">
             <TouchableOpacity onPress={() => setActiveTab('info')} className={`pb-3 mr-8 border-b-2 ${activeTab === 'info' ? 'border-primary' : 'border-transparent'}`}>
-              <Text className={`text-sm font-black ${activeTab === 'info' ? 'text-white' : 'text-muted'}`}>THÔNG TIN</Text>
+              <Text className={`text-sm font-black ${activeTab === 'info' ? 'text-text' : 'text-muted'}`}>THÔNG TIN</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setActiveTab('episodes')} className={`pb-3 border-b-2 ${activeTab === 'episodes' ? 'border-primary' : 'border-transparent'}`}>
-              <Text className={`text-sm font-black ${activeTab === 'episodes' ? 'text-white' : 'text-muted'}`}>TẬP PHIM</Text>
+              <Text className={`text-sm font-black ${activeTab === 'episodes' ? 'text-text' : 'text-muted'}`}>TẬP PHIM</Text>
             </TouchableOpacity>
           </View>
 
@@ -269,8 +279,8 @@ const DetailScreen = ({ route, navigation }: Props) => {
 
                 {/* Genres */}
                 <View className="flex-row items-center mb-3">
-                  <Layers color={COLORS.primary} size={18} />
-                  <Text className="text-white text-lg font-bold ml-2">Thể loại</Text>
+                  <Layers color={colors.primary} size={18} />
+                  <Text className="text-text text-lg font-bold ml-2">Thể loại</Text>
                 </View>
                 <View className="flex-row flex-wrap mb-6">
                   {movie.category?.map((cat) => (
@@ -282,8 +292,8 @@ const DetailScreen = ({ route, navigation }: Props) => {
 
                 {/* Plot Summary */}
                 <View className="flex-row items-center mb-3">
-                  <Info color={COLORS.primary} size={18} />
-                  <Text className="text-white text-lg font-bold ml-2">Nội dung</Text>
+                  <Info color={colors.primary} size={18} />
+                  <Text className="text-text text-lg font-bold ml-2">Nội dung</Text>
                 </View>
                 <TouchableOpacity 
                    activeOpacity={0.9} 
@@ -308,13 +318,13 @@ const DetailScreen = ({ route, navigation }: Props) => {
                 {movie.actor && movie.actor.length > 0 && (
                   <View className="mt-8">
                     <View className="flex-row items-center mb-4">
-                      <User color={COLORS.primary} size={18} />
-                      <Text className="text-white text-lg font-bold ml-2">Diễn viên</Text>
+                      <User color={colors.primary} size={18} />
+                      <Text className="text-text text-lg font-bold ml-2">Diễn viên</Text>
                     </View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                        {movie.actor.map((actor, idx) => (
-                         <View key={idx} className="bg-surface px-5 py-3 rounded-2xl mr-3 border border-white/5">
-                            <Text className="text-white text-xs font-bold">{actor}</Text>
+                         <View key={idx} className="bg-surface px-5 py-3 rounded-2xl mr-3 border border-border">
+                            <Text className="text-text text-xs font-bold">{actor}</Text>
                          </View>
                        ))}
                     </ScrollView>
@@ -330,7 +340,7 @@ const DetailScreen = ({ route, navigation }: Props) => {
                       <TouchableOpacity
                         key={idx}
                         onPress={() => { setActiveServer(idx); setActiveTab('episodes'); }}
-                        className={`px-6 py-2.5 rounded-2xl mr-3 border ${activeServer === idx ? 'bg-primary border-primary' : 'bg-white/5 border-white/10'}`}
+                        className={`px-6 py-2.5 rounded-2xl mr-3 border ${activeServer === idx ? 'bg-primary border-primary' : 'bg-surface border-border'}`}
                       >
                         <Text className={`text-[11px] font-black uppercase tracking-widest ${activeServer === idx ? 'text-white' : 'text-muted'}`}>
                           {server.server_name}
@@ -343,13 +353,13 @@ const DetailScreen = ({ route, navigation }: Props) => {
                 {/* Episodes Header with Sort */}
                 <View className="flex-row items-center justify-between mb-6 px-1">
                   <View className="flex-row items-center">
-                    <Globe color={COLORS.primary} size={16} />
+                    <Globe color={colors.primary} size={16} />
                     <Text className="text-primary text-sm font-black ml-2 uppercase tracking-widest">
                       {movie.episodes?.[activeServer]?.server_name || 'Tập phim'}
                     </Text>
                   </View>
-                  <TouchableOpacity onPress={() => setIsDesc(!isDesc)} className="flex-row items-center bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
-                    {isDesc ? <ArrowDownAz color={COLORS.primary} size={14} /> : <ArrowUpAz color={COLORS.primary} size={14} />}
+                  <TouchableOpacity onPress={() => setIsDesc(!isDesc)} className="flex-row items-center bg-surface px-3 py-1.5 rounded-xl border border-border">
+                    {isDesc ? <ArrowDownAz color={colors.primary} size={14} /> : <ArrowUpAz color={colors.primary} size={14} />}
                     <Text className="text-muted text-[10px] font-bold ml-2 uppercase">{isDesc ? 'Mới nhất' : 'Cũ nhất'}</Text>
                   </TouchableOpacity>
                 </View>
@@ -362,7 +372,7 @@ const DetailScreen = ({ route, navigation }: Props) => {
                       <TouchableOpacity
                         key={eIdx}
                         style={{ width: btnSize, height: btnSize }}
-                        className="bg-white/5 border border-white/10 rounded-xl items-center justify-center m-[4px]"
+                        className="bg-surface border border-border rounded-xl items-center justify-center m-[4px]"
                         activeOpacity={0.7}
                         onPress={() => {
                           navigation.navigate('Watch', {
@@ -374,7 +384,7 @@ const DetailScreen = ({ route, navigation }: Props) => {
                           });
                         }}
                       >
-                        <Text className="text-white text-[10px] font-black leading-none">{ep.name}</Text>
+                        <Text className="text-text text-[10px] font-black leading-none">{ep.name}</Text>
                       </TouchableOpacity>
                     );
                   })}

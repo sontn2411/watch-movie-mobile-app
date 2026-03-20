@@ -16,6 +16,7 @@ import { createMMKV } from 'react-native-mmkv';
 import { useAppStore } from '@/store/useAppStore';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import Orientation from 'react-native-orientation-locker';
+import { useTheme } from '@/hooks/useTheme';
 
 // Keep for legacy compatibility if needed, but prefer useAppStore
 export const storage = createMMKV();
@@ -25,6 +26,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Welcome'>;
 const WelcomeScreen = ({ navigation }: Props) => {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
     // Ensure orientation is unlocked on Welcome screen (especially for iPad)
@@ -34,9 +36,7 @@ const WelcomeScreen = ({ navigation }: Props) => {
   const setHasSeenWelcome = useAppStore(state => state.setHasSeenWelcome);
 
   const handleGuest = () => {
-    // Save to store so next time it skips Welcome
     setHasSeenWelcome(true);
-    // Navigate to Home
     navigation.replace('Main');
   };
 
@@ -45,7 +45,7 @@ const WelcomeScreen = ({ navigation }: Props) => {
   };
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-transparent">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ flexGrow: 1 }}
@@ -68,7 +68,7 @@ const WelcomeScreen = ({ navigation }: Props) => {
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginBottom: isLandscape ? 8 : 16,
-                shadowColor: COLORS.primary,
+                shadowColor: colors.primary,
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: 0.5,
                 shadowRadius: 20,
@@ -87,9 +87,9 @@ const WelcomeScreen = ({ navigation }: Props) => {
               className={`${isLandscape ? 'mb-4' : 'mb-10'} items-center`}
             >
               <Text
-                className={`text-white ${isLandscape ? 'text-4xl' : 'text-5xl'} font-black tracking-[0.3em]`}
+                className={`text-text ${isLandscape ? 'text-4xl' : 'text-5xl'} font-black tracking-[0.3em]`}
                 style={{ 
-                  textShadowColor: 'rgba(225, 29, 72, 0.4)',
+                  textShadowColor: isDark ? 'rgba(225, 29, 72, 0.4)' : 'rgba(0, 0, 0, 0.1)',
                   textShadowOffset: { width: 0, height: 4 },
                   textShadowRadius: 10,
                 }}
@@ -97,7 +97,7 @@ const WelcomeScreen = ({ navigation }: Props) => {
                 CINEMA
               </Text>
               <Text
-                className={`text-gray-400 text-[10px] font-bold tracking-[0.6em] uppercase mt-4 opacity-80`}
+                className={`text-muted text-[10px] font-bold tracking-[0.6em] uppercase mt-4 opacity-80`}
               >
                 Khám phá điện ảnh đỉnh cao
               </Text>
@@ -109,10 +109,10 @@ const WelcomeScreen = ({ navigation }: Props) => {
             >
               <Pressable
                 onPress={handleAuth}
-                className="bg-primary w-full h-[60px] items-center justify-center rounded-2xl shadow-xl active:scale-95"
+                className="w-full h-[60px] items-center justify-center rounded-2xl shadow-xl active:scale-95"
                 style={{
-                  backgroundColor: COLORS.primary,
-                  shadowColor: COLORS.primary,
+                  backgroundColor: colors.primary,
+                  shadowColor: colors.primary,
                   shadowOffset: { width: 0, height: 10 },
                   shadowOpacity: 0.3,
                   shadowRadius: 15,
@@ -125,9 +125,13 @@ const WelcomeScreen = ({ navigation }: Props) => {
 
               <Pressable
                 onPress={handleGuest}
-                className="w-full h-[60px] items-center justify-center rounded-2xl border border-white/20 bg-white/5 active:scale-95"
+                className="w-full h-[60px] items-center justify-center rounded-2xl border active:scale-95"
+                style={{
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                }}
               >
-                <Text className="text-gray-300 text-base font-semibold">
+                <Text className="text-text text-base font-bold">
                   Tiếp tục với khách
                 </Text>
               </Pressable>
@@ -138,6 +142,7 @@ const WelcomeScreen = ({ navigation }: Props) => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   logo: {

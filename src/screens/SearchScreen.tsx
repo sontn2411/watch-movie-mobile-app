@@ -21,6 +21,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BaseCard from '@/components/movie/common/BaseCard';
 import { useAppStore } from '@/store/useAppStore';
 import { SearchCardSkeleton } from '@/components/common/Skeleton';
+import { useTheme } from '@/hooks/useTheme';
+
 
 type Props = NativeStackScreenProps<RootStackParamList, any>;
 
@@ -46,8 +48,10 @@ const SearchScreen = ({ navigation }: Props) => {
     removeSearchHistoryItem,
     clearSearchHistory
   } = useAppStore();
+  const { colors } = useTheme();
   
   const { 
+
     data, 
     isLoading, 
     fetchNextPage, 
@@ -96,7 +100,7 @@ const SearchScreen = ({ navigation }: Props) => {
       className="flex-1 px-4 mt-2"
     >
       <View className="flex-row justify-between items-center mb-4">
-        <Text className="text-white text-lg font-bold">Lịch sử tìm kiếm</Text>
+        <Text className="text-text text-lg font-bold">Lịch sử tìm kiếm</Text>
         <TouchableOpacity onPress={clearSearchHistory}>
           <Text className="text-primary font-semibold">Xóa tất cả</Text>
         </TouchableOpacity>
@@ -108,17 +112,17 @@ const SearchScreen = ({ navigation }: Props) => {
         renderItem={({ item, index }: any) => (
           <Animated.View 
             entering={FadeInDown.delay(index * 50).duration(300)}
-            className="flex-row items-center py-3 border-b border-white/5"
+            className="flex-row items-center py-3 border-b border-border"
           >
-            <Clock color={COLORS.textMuted} size={18} />
+            <Clock color={colors.textMuted} size={18} />
             <TouchableOpacity 
               className="flex-1 ml-3" 
               onPress={() => handleSearch(item)}
             >
-              <Text className="text-gray-300 text-base">{item}</Text>
+              <Text className="text-text text-base">{item}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => removeSearchHistoryItem(item)} className="p-2">
-              <Trash2 color={COLORS.textMuted} size={18} />
+              <Trash2 color={colors.textMuted} size={18} />
             </TouchableOpacity>
           </Animated.View>
         )}
@@ -142,7 +146,7 @@ const SearchScreen = ({ navigation }: Props) => {
     if (!isFetchingNextPage) return null;
     return (
       <View className="py-6 items-center justify-center">
-        <ActivityIndicator color={COLORS.primary} size="small" />
+        <ActivityIndicator color={colors.primary} size="small" />
       </View>
     );
   };
@@ -153,25 +157,25 @@ const SearchScreen = ({ navigation }: Props) => {
         style={{ paddingTop: insets.top + 10 }}
         className="px-4 pb-4"
       >
-        <Text className="text-white text-3xl font-black mb-6 tracking-wider">
+        <Text className="text-text text-3xl font-black mb-6 tracking-wider">
           TÌM KIẾM
         </Text>
         
         <View 
-          className="flex-row items-center bg-white/5 border rounded-2xl pl-4 pr-2 py-2"
+          className="flex-row items-center border rounded-2xl pl-4 pr-2 py-2"
           style={{
-            borderColor: isFocused ? COLORS.primary : 'rgba(255, 255, 255, 0.1)',
-            backgroundColor: isFocused ? 'rgba(225, 29, 72, 0.05)' : 'rgba(255, 255, 255, 0.05)',
+            borderColor: isFocused ? colors.primary : colors.border,
+            backgroundColor: isFocused ? `${colors.primary}15` : colors.surface,
           }}
         >
           <Search 
-            color={isFocused ? COLORS.primary : COLORS.textMuted} 
+            color={isFocused ? colors.primary : colors.textMuted} 
             size={20} 
           />
           <TextInput
             placeholder="Tìm kiếm phim, diễn viên..."
-            placeholderTextColor="rgba(148, 163, 184, 0.5)"
-            className="flex-1 text-white text-base ml-3 py-2"
+            placeholderTextColor={colors.textMuted}
+            className="flex-1 text-text text-base ml-3 py-2"
             value={keyword}
             onChangeText={setKeyword}
             onFocus={() => setIsFocused(true)}
@@ -184,7 +188,7 @@ const SearchScreen = ({ navigation }: Props) => {
           />
           {keyword !== '' && (
             <TouchableOpacity onPress={clearSearch} className="p-2">
-              <X color={COLORS.textMuted} size={20} />
+              <X color={colors.textMuted} size={20} />
             </TouchableOpacity>
           )}
           <TouchableOpacity 
@@ -224,8 +228,8 @@ const SearchScreen = ({ navigation }: Props) => {
             entering={FadeIn.duration(500)}
             className="flex-1 items-center justify-center px-10"
           >
-            <Film color={COLORS.textMuted} size={64} className="mb-4 opacity-20" />
-            <Text className="text-gray-400 text-center text-lg">
+            <Film color={colors.textMuted} size={64} className="mb-4 opacity-20" />
+            <Text className="text-muted text-center text-lg">
               Không tìm thấy phim phù hợp với "{searchQuery}"
             </Text>
           </Animated.View>
@@ -236,13 +240,13 @@ const SearchScreen = ({ navigation }: Props) => {
             entering={FadeIn.duration(800)}
             className="flex-1 items-center justify-center px-10"
           >
-            <View className="w-20 h-20 bg-white/5 rounded-full items-center justify-center mb-6 border border-white/5">
-              <Search color={COLORS.textMuted} size={40} className="opacity-40" />
+            <View className="w-20 h-20 bg-surface border border-border rounded-full items-center justify-center mb-6">
+              <Search color={colors.textMuted} size={40} className="opacity-40" />
             </View>
-            <Text className="text-white text-xl font-bold mb-2">
+            <Text className="text-text text-xl font-bold mb-2">
               Khám phá điện ảnh
             </Text>
-            <Text className="text-gray-400 text-center text-base leading-6">
+            <Text className="text-muted text-center text-base leading-6">
               Tìm kiếm hàng ngàn bộ phim, chương trình truyền hình và hơn thế nữa.
             </Text>
           </Animated.View>
@@ -253,3 +257,4 @@ const SearchScreen = ({ navigation }: Props) => {
 };
 
 export default SearchScreen;
+

@@ -4,9 +4,10 @@ import BootSplash from 'react-native-bootsplash';
 
 type Props = {
   onAnimationEnd: () => void;
+  isDark: boolean;
 };
 
-export const AnimatedBootSplash = ({ onAnimationEnd }: Props) => {
+export const AnimatedBootSplash = ({ onAnimationEnd, isDark }: Props) => {
   const [opacity] = useState(() => new Animated.Value(1));
   const [scale] = useState(() => new Animated.Value(1));
   
@@ -46,7 +47,13 @@ export const AnimatedBootSplash = ({ onAnimationEnd }: Props) => {
   });
 
   return (
-    <Animated.View {...container} style={[container.style, { opacity }]}>
+    <Animated.View 
+      {...container} 
+      style={[
+        container.style, 
+        { opacity, backgroundColor: isDark ? '#0B1120' : '#F1F5F9' }
+      ]}
+    >
       <Animated.Image
         {...logo}
         style={[logo.style, { transform: [{ scale }] }]}
@@ -54,3 +61,4 @@ export const AnimatedBootSplash = ({ onAnimationEnd }: Props) => {
     </Animated.View>
   );
 };
+

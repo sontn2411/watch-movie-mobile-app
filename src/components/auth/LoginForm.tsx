@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { User, Lock } from 'lucide-react-native';
 import { AuthInput } from './AuthInput';
-import { COLORS } from '@/constants/theme';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useAppStore } from '@/store/useAppStore';
 import authService from '@/services/auth';
-import { ActivityIndicator } from 'react-native';
 import { useToastStore } from '@/store/useToastStore';
-
-
+import { useTheme } from '@/hooks/useTheme';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -23,8 +20,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onForgotPasswor
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
   const { setAuth } = useAppStore();
-
   const { showToast } = useToastStore();
+  const { colors } = useTheme();
 
   const handleTextChange = (field: string, text: string) => {
     if (field === 'email') setEmail(text);
@@ -97,10 +94,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onForgotPasswor
   return (
     <View className="flex-1">
       <Animated.View entering={FadeInDown.delay(300).duration(800)}>
-        <Text className="text-white text-4xl font-black mb-2 tracking-wider">
+        <Text className="text-text text-4xl font-black mb-2 tracking-wider">
           ĐĂNG NHẬP
         </Text>
-        <Text className="text-gray-400 mb-10 text-base leading-6">
+        <Text className="text-muted mb-10 text-base leading-6">
           Chào mừng bạn trở lại! Hãy đăng nhập để tiếp tục khám phá.
         </Text>
       </Animated.View>
@@ -143,9 +140,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onForgotPasswor
           disabled={loading}
           className="bg-primary py-4 rounded-2xl items-center shadow-lg mb-8"
           style={{
-            backgroundColor: COLORS.primary,
+            backgroundColor: colors.primary,
             opacity: loading ? 0.7 : 1,
-            shadowColor: COLORS.primary,
+            shadowColor: colors.primary,
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.3,
             shadowRadius: 12,
@@ -163,7 +160,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onForgotPasswor
 
 
         <View className="flex-row justify-center items-center">
-          <Text className="text-gray-400 text-base">
+          <Text className="text-muted text-base">
             Chưa có tài khoản?{' '}
           </Text>
           <TouchableOpacity onPress={onSwitchMode}>
@@ -176,3 +173,4 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onForgotPasswor
     </View>
   );
 };
+

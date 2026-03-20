@@ -16,6 +16,7 @@ import Animated, { FadeIn, Layout } from 'react-native-reanimated';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { useAppStore } from '@/store/useAppStore';
+import { useTheme } from '@/hooks/useTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
@@ -24,6 +25,7 @@ type AuthMode = 'login' | 'register';
 const AuthScreen = ({ navigation }: Props) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const setHasSeenWelcome = useAppStore(state => state.setHasSeenWelcome);
+  const { colors, isDark } = useTheme();
 
   const handleSuccess = () => {
     setHasSeenWelcome(true);
@@ -53,9 +55,13 @@ const AuthScreen = ({ navigation }: Props) => {
           >
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              className="w-10 h-10 items-center justify-center rounded-full bg-white/10 border border-white/10"
+              className="w-10 h-10 items-center justify-center rounded-full border"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                borderColor: colors.border
+              }}
             >
-              <ChevronLeft color="white" size={24} />
+              <ChevronLeft color={colors.text} size={24} />
             </TouchableOpacity>
           </Animated.View>
 

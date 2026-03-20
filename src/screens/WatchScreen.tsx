@@ -19,6 +19,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
 import { COLORS } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/hooks/useTheme';
 import {
   ChevronLeft,
   Globe,
@@ -47,10 +48,12 @@ const WatchScreen = ({ route, navigation }: Props) => {
   const { url, title, currentEpisode, slug, serverIndex } = route.params;
   const insets = useSafeAreaInsets();
   const videoRef = useRef<VideoRef>(null);
+  const { colors, isDark } = useTheme();
 
   const { data, isLoading: isDetailsLoading } = useMovieDetails(slug);
-
+  
   // Player States
+  // ... (keeping existing states)
   const [activeUrl, setActiveUrl] = useState(url);
   const [activeEpName, setActiveEpName] = useState(currentEpisode);
   const [activeServer, setActiveServer] = useState(serverIndex || 0);
@@ -66,48 +69,7 @@ const WatchScreen = ({ route, navigation }: Props) => {
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const controlsOpacity = useSharedValue(1);
-
-  const isEmbed = useMemo(() => {
-    return !activeUrl?.includes('.m3u8') || activeUrl?.includes('embed');
-  }, [activeUrl]);
-
-  // Auto-hide controls
-  useEffect(() => {
-    let timer: any;
-    if (showControls && !paused) {
-      timer = setTimeout(() => {
-        setShowControls(false);
-        controlsOpacity.value = withTiming(0);
-      }, 3000);
-    }
-    return () => clearTimeout(timer);
-  }, [showControls, paused]);
-
-  const toggleControls = () => {
-    if (isEmbed) {
-      setShowControls(!showControls);
-      return;
-    }
-    setShowControls(!showControls);
-    controlsOpacity.value = withTiming(showControls ? 0 : 1);
-  };
-
-  useEffect(() => {
-    if (isFullscreen) {
-      Orientation.lockToLandscape();
-    } else {
-      Orientation.lockToPortrait();
-    }
-    return () => Orientation.lockToPortrait();
-  }, [isFullscreen]);
-
-  useEffect(() => {
-    return () => {
-      Orientation.lockToPortrait();
-      Orientation.unlockAllOrientations();
-    };
-  }, []);
+  // ... (keeping existing effects/handlers)
 
   const formatTime = (timeInSeconds: number) => {
     const minutes = Math.floor(timeInSeconds / 60);
@@ -153,10 +115,49 @@ const WatchScreen = ({ route, navigation }: Props) => {
   };
 
   const videoHeight = isFullscreen ? height : (width * 9) / 16;
+  const controlsOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    let timer: any;
+    if (showControls && !paused) {
+      timer = setTimeout(() => {
+        setShowControls(false);
+        controlsOpacity.value = withTiming(0);
+      }, 3000);
+    }
+    return () => clearTimeout(timer);
+  }, [showControls, paused]);
+
+  const toggleControls = () => {
+    setShowControls(!showControls);
+    if (!isEmbed) {
+      controlsOpacity.value = withTiming(showControls ? 0 : 1);
+    }
+  };
+
+  useEffect(() => {
+    if (isFullscreen) {
+      Orientation.lockToLandscape();
+    } else {
+      Orientation.lockToPortrait();
+    }
+    return () => Orientation.lockToPortrait();
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    return () => {
+      Orientation.lockToPortrait();
+      Orientation.unlockAllOrientations();
+    };
+  }, []);
+
+  const isEmbed = useMemo(() => {
+    return !activeUrl?.includes('.m3u8') || activeUrl?.includes('embed');
+  }, [activeUrl]);
 
   return (
-    <View className="flex-1 bg-background">
-      <StatusBar hidden={isFullscreen} barStyle="light-content" />
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <StatusBar hidden={isFullscreen} barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Video Player Section */}
       <View
@@ -180,7 +181,7 @@ const WatchScreen = ({ route, navigation }: Props) => {
                     style={StyleSheet.absoluteFill}
                     className="bg-black items-center justify-center"
                   >
-                    <ActivityIndicator color={COLORS.primary} size="large" />
+                    <ActivityIndicator color={colors.primary} size="large" />
                   </View>
                 )}
               />
@@ -204,7 +205,7 @@ const WatchScreen = ({ route, navigation }: Props) => {
                 style={StyleSheet.absoluteFill}
                 className="items-center justify-center bg-black/20"
               >
-                <ActivityIndicator color={COLORS.primary} size="large" />
+                <ActivityIndicator color={colors.primary} size="large" />
               </View>
             )}
 
@@ -242,7 +243,7 @@ const WatchScreen = ({ route, navigation }: Props) => {
                   </View>
                 </View>
 
-                {/* Middle Controls */}
+                {/* Middle Controls (Always White as player is dark) */}
                 <View className="flex-1 flex-row items-center justify-evenly">
                   <TouchableOpacity onPress={seekBackward}>
                     <RotateCcw color="white" size={32} />
@@ -250,7 +251,8 @@ const WatchScreen = ({ route, navigation }: Props) => {
 
                   <TouchableOpacity
                     onPress={() => setPaused(!paused)}
-                    className="w-16 h-16 rounded-full bg-primary items-center justify-center"
+                    className="w-16 h-16 rounded-full items-center justify-center"
+                    style={{ backgroundColor: colors.primary }}
                   >
                     {paused ? (
                       <Play color="white" size={32} fill="white" />
@@ -281,9 +283,9 @@ const WatchScreen = ({ route, navigation }: Props) => {
                       minimumValue={0}
                       maximumValue={duration}
                       value={currentTime}
-                      minimumTrackTintColor={COLORS.primary}
+                      minimumTrackTintColor={colors.primary}
                       maximumTrackTintColor="rgba(255,255,255,0.3)"
-                      thumbTintColor={COLORS.primary}
+                      thumbTintColor={colors.primary}
                       onSlidingComplete={val => videoRef.current?.seek(val)}
                     />
                     <TouchableOpacity
@@ -301,7 +303,6 @@ const WatchScreen = ({ route, navigation }: Props) => {
               </Animated.View>
             )}
 
-            {/* Embed Mode Overlay (Minimal) */}
             {isEmbed && showControls && (
               <View
                 style={{ position: 'absolute', top: 0, left: 0, padding: 20 }}
@@ -315,14 +316,13 @@ const WatchScreen = ({ route, navigation }: Props) => {
         </TouchableWithoutFeedback>
       </View>
 
-      {/* Content Section (Only in portrait) */}
       {!isFullscreen && (
         <ScrollView
           className="flex-1 px-4 mt-6"
           showsVerticalScrollIndicator={false}
         >
           {isDetailsLoading ? (
-            <ActivityIndicator color={COLORS.primary} className="mt-10" />
+            <ActivityIndicator color={colors.primary} className="mt-10" />
           ) : (
             <View>
               {/* Server Selection */}
@@ -337,7 +337,7 @@ const WatchScreen = ({ route, navigation }: Props) => {
                       <TouchableOpacity
                         key={idx}
                         onPress={() => setActiveServer(idx)}
-                        className={`px-6 py-2.5 rounded-2xl mr-3 border ${activeServer === idx ? 'bg-primary border-primary' : 'bg-white/5 border-white/10'}`}
+                        className={`px-6 py-2.5 rounded-2xl mr-3 border ${activeServer === idx ? 'bg-primary border-primary' : 'bg-surface border-border'}`}
                       >
                         <Text
                           className={`text-[11px] font-black uppercase tracking-widest ${activeServer === idx ? 'text-white' : 'text-muted'}`}
@@ -352,19 +352,19 @@ const WatchScreen = ({ route, navigation }: Props) => {
               {/* Episodes Header */}
               <View className="flex-row items-center justify-between mb-4 px-1">
                 <View className="flex-row items-center">
-                  <Globe color={COLORS.primary} size={16} />
-                  <Text className="text-white font-bold ml-2">
+                  <Globe color={colors.primary} size={16} />
+                  <Text className="text-text font-bold ml-2">
                     Danh sách tập
                   </Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => setIsDesc(!isDesc)}
-                  className="flex-row items-center bg-white/5 px-3 py-1.5 rounded-xl border border-white/10"
+                  className="flex-row items-center bg-surface px-3 py-1.5 rounded-xl border border-border"
                 >
                   {isDesc ? (
-                    <ArrowDownAz color={COLORS.primary} size={14} />
+                    <ArrowDownAz color={colors.primary} size={14} />
                   ) : (
-                    <ArrowUpAz color={COLORS.primary} size={14} />
+                    <ArrowUpAz color={colors.primary} size={14} />
                   )}
                   <Text className="text-muted text-[10px] font-bold ml-2 uppercase">
                     {isDesc ? 'Mới nhất' : 'Cũ nhất'}
@@ -372,7 +372,6 @@ const WatchScreen = ({ route, navigation }: Props) => {
                 </TouchableOpacity>
               </View>
 
-              {/* Episode Grid */}
               <View className="flex-row flex-wrap items-center">
                 {sortedEpisodes.map((ep, eIdx) => {
                   const btnWidth = (width - 32 - 32) / 4;
@@ -387,7 +386,7 @@ const WatchScreen = ({ route, navigation }: Props) => {
                       className={`border rounded-xl items-center justify-center m-[4px] ${
                         isActive
                           ? 'bg-primary border-primary'
-                          : 'bg-white/5 border-white/10'
+                          : 'bg-surface border-border'
                       }`}
                       activeOpacity={0.7}
                     >
@@ -407,6 +406,7 @@ const WatchScreen = ({ route, navigation }: Props) => {
     </View>
   );
 };
+
 
 export default WatchScreen;
 
