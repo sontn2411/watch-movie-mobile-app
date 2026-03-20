@@ -9,7 +9,7 @@ interface User {
   email: string;
 }
 
-interface Error {
+export interface ApiError {
   status: number;
   code: string;
   message: string;
@@ -23,8 +23,11 @@ interface Error {
 export interface ResponseRegister {
   message?: string;
   user?: User;
-  error?: Error;
+  error?: ApiError; // For 422
   success?: boolean;
+  // For 403 (top-level)
+  status?: number;
+  code?: string;
 }
 
 export interface PayloadLogin {
@@ -37,6 +40,10 @@ export interface ResponseLogin {
   accessToken?: string;
   refreshToken?: string;
   user?: User;
-  error?: Error;
+  error?: ApiError; // For 422
   success?: boolean;
+  // For 403 (top-level)
+  status?: number;
+  code?: string;
 }
+

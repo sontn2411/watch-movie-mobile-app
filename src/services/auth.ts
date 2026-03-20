@@ -31,7 +31,7 @@ const authService = {
   },
 
   refreshToken: async (refreshToken: string): Promise<ResponseLogin> => {
-    const response = await apiClient.post('/users/refresh ', {
+    const response = await apiClient.post('/users/refresh', {
       refreshToken,
     });
     return response.data;

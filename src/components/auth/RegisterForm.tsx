@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { User, Mail, Lock } from 'lucide-react-native';
 import { AuthInput } from './AuthInput';
 import { COLORS } from '@/constants/theme';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useAppStore } from '@/store/useAppStore';
+import authService from '@/services/auth';
+import { useToastStore } from '@/store/useToastStore';
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -12,22 +14,101 @@ interface RegisterFormProps {
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchMode }) => {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const setUserToken = useAppStore(state => state.setUserToken);
+  const [fieldErrors, setFieldErrors] = useState<string[]>([]);
+  const { setAuth } = useAppStore();
+
+  const { showToast } = useToastStore();
+
+  const handleTextChange = (field: string, text: string) => {
+    switch (field) {
+      case 'username': setUsername(text); break;
+      case 'email': setEmail(text); break;
+      case 'password': setPassword(text); break;
+      case 'confirmPassword': setConfirmPassword(text); break;
+    }
+    setFieldErrors(prev => prev.filter(f => f !== field));
+  };
 
   const handleSubmit = async () => {
-    if (!email || !password || password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin và đảm bảo mật khẩu khớp.');
+    setFieldErrors([]);
+    const errors: string[] = [];
+    if (!username) errors.push('username');
+    if (!email) errors.push('email');
+    if (!password) errors.push('password');
+    if (password !== confirmPassword) errors.push('confirmPassword');
+
+    if (errors.length > 0) {
+      setFieldErrors(errors);
+      showToast({ 
+        message: 'Vui lòng điền đầy đủ thông tin và đảm bảo mật khẩu khớp.', 
+        type: 'error' 
+      });
       return;
     }
+    
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setFieldErrors(['email']);
+      showToast({ message: 'Email không hợp lệ', type: 'error' });
+      return;
+    }
+
     setLoading(true);
-    // Simulation: Save token and success
-    setUserToken('user_token_demo');
-    onSuccess();
-    setLoading(false);
+    try {
+      const response = await authService.register({
+        username,
+        email,
+        password,
+      });
+
+      if (response.success || response.user) {
+        showToast({ 
+          message: response.message || 'Đăng ký thành công! Đang chuyển sang đăng nhập...', 
+          type: 'success' 
+        });
+        setTimeout(() => {
+          onSwitchMode();
+        }, 1500);
+      }
+    } catch (error: any) {
+      const data = error.response?.data;
+      
+      if (data?.error) {
+        // Handle 422 Validation Error
+        const errs = data.error.details?.map((d: any) => d.field) || [];
+        setFieldErrors(errs);
+
+        const details = data.error.details
+          ?.map((d: any) => d.message)
+          .join(', ');
+        showToast({ 
+          message: `${data.error.message}${details ? `: ${details}` : ''}`, 
+          type: 'error' 
+        });
+      } else if (data?.message) {
+        showToast({ message: data.message, type: 'error' });
+        // Guess fields based on message
+        const msg = data.message.toLowerCase();
+        const guessed: string[] = [];
+        if (msg.includes('username')) guessed.push('username');
+        if (msg.includes('email')) guessed.push('email');
+        if (msg.includes('password')) guessed.push('password');
+        setFieldErrors(guessed);
+      } else {
+        showToast({ 
+          message: error.message || 'Có lỗi xảy ra trong quá trình đăng ký', 
+          type: 'error' 
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,27 +127,40 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchM
         className="space-y-4"
       >
         <AuthInput
+          icon={User}
+          placeholder="Tên đăng nhập"
+          value={username}
+          onChangeText={(text) => handleTextChange('username', text)}
+          autoCapitalize="none"
+          isError={fieldErrors.includes('username')}
+        />
+
+        <AuthInput
           icon={Mail}
           placeholder="Email"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => handleTextChange('email', text)}
           keyboardType="email-address"
+          autoCapitalize="none"
+          isError={fieldErrors.includes('email')}
         />
 
         <AuthInput
           icon={Lock}
           placeholder="Mật khẩu"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => handleTextChange('password', text)}
           isPassword
+          isError={fieldErrors.includes('password')}
         />
 
         <AuthInput
           icon={Lock}
           placeholder="Xác nhận mật khẩu"
           value={confirmPassword}
-          onChangeText={setConfirmPassword}
+          onChangeText={(text) => handleTextChange('confirmPassword', text)}
           isPassword
+          isError={fieldErrors.includes('confirmPassword')}
         />
       </Animated.View>
 
@@ -74,9 +168,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchM
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={handleSubmit}
+          disabled={loading}
           className="bg-primary py-4 rounded-2xl items-center shadow-lg mb-8"
           style={{
             backgroundColor: COLORS.primary,
+            opacity: loading ? 0.7 : 1,
             shadowColor: COLORS.primary,
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.3,
@@ -84,16 +180,20 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchM
             elevation: 5,
           }}
         >
-          <Text className="text-white font-bold text-lg uppercase tracking-wider">
-            Đăng Ký
-          </Text>
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-white font-bold text-lg uppercase tracking-wider">
+              Đăng Ký
+            </Text>
+          )}
         </TouchableOpacity>
 
         <View className="flex-row justify-center items-center">
           <Text className="text-gray-400 text-base">
             Đã có tài khoản?{' '}
           </Text>
-          <TouchableOpacity onPress={onSwitchMode}>
+          <TouchableOpacity onPress={onSwitchMode} disabled={loading}>
             <Text className="text-primary font-black text-base">
               Đăng nhập
             </Text>
@@ -103,3 +203,4 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchM
     </View>
   );
 };
+

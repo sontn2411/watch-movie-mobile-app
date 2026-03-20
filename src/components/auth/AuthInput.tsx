@@ -6,11 +6,13 @@ import { COLORS } from '@/constants/theme';
 interface AuthInputProps extends TextInputProps {
   icon: LucideIcon;
   isPassword?: boolean;
+  isError?: boolean;
 }
 
 export const AuthInput = ({ 
   icon: Icon, 
   isPassword, 
+  isError,
   value, 
   onChangeText, 
   placeholder, 
@@ -20,11 +22,16 @@ export const AuthInput = ({
   const [showPassword, setShowPassword] = useState(false);
 
   const inputStyle = {
-    borderColor: isFocused ? COLORS.primary : 'rgba(255, 255, 255, 0.1)',
-    backgroundColor: isFocused ? 'rgba(225, 29, 72, 0.05)' : 'rgba(255, 255, 255, 0.05)',
+    borderColor: isError 
+      ? '#EF4444' 
+      : (isFocused ? COLORS.primary : 'rgba(255, 255, 255, 0.1)'),
+    backgroundColor: isError
+      ? 'rgba(239, 68, 68, 0.05)'
+      : (isFocused ? 'rgba(225, 29, 72, 0.05)' : 'rgba(255, 255, 255, 0.05)'),
   };
 
-  const iconColor = isFocused ? COLORS.primary : COLORS.textMuted;
+  const iconColor = isError ? '#EF4444' : (isFocused ? COLORS.primary : COLORS.textMuted);
+
 
   return (
     <View 

@@ -12,6 +12,7 @@ import { COLORS } from '@/constants/theme';
 import { AnimatedBootSplash } from '@/components/AnimatedBootSplash';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import RNLinearGradient from 'react-native-linear-gradient';
+import { ToastProvider } from '@/components/common/ToastProvider';
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const RootLayout = ({ children }: RootLayoutProps) => {
               </View>
             )}
             <View className="flex-1">{children}</View>
+            <ToastProvider />
           </View>
         </NavigationContainer>
       </QueryClientProvider>

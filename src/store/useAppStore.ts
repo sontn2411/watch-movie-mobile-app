@@ -20,6 +20,11 @@ const zustandStorage = {
 type ThemeMode = 'dark' | 'light' | 'system';
 type Language = 'vi' | 'en';
 
+interface User {
+  username: string;
+  email: string;
+}
+
 interface AppState {
   // Theme
   theme: ThemeMode;
@@ -31,7 +36,9 @@ interface AppState {
   
   // Auth
   userToken: string | null;
-  setUserToken: (token: string | null) => void;
+  refreshToken: string | null;
+  user: User | null;
+  setAuth: (token: string | null, refreshToken: string | null, user?: User) => void;
   logout: () => void;
   
   // App State
@@ -55,14 +62,27 @@ export const useAppStore = create<AppState>()(
       setLanguage: (language) => set({ language }),
       
       userToken: storage.getString('user_token') || null,
-      setUserToken: (userToken) => {
+      refreshToken: storage.getString('refresh_token') || null,
+      user: JSON.parse(storage.getString('user_profile') || 'null'),
+
+      setAuth: (userToken, refreshToken, user) => {
         if (userToken) storage.set('user_token', userToken);
         else storage.remove('user_token');
-        set({ userToken });
+
+        if (refreshToken) storage.set('refresh_token', refreshToken);
+        else storage.remove('refresh_token');
+
+        if (user) storage.set('user_profile', JSON.stringify(user));
+        else storage.remove('user_profile');
+
+        set({ userToken, refreshToken, user: user || get().user });
       },
+
       logout: () => {
         storage.remove('user_token');
-        set({ userToken: null });
+        storage.remove('refresh_token');
+        storage.remove('user_profile');
+        set({ userToken: null, refreshToken: null, user: null });
       },
       
       hasSeenWelcome: storage.getBoolean('hasSeenWelcome') || false,
@@ -96,3 +116,4 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+

@@ -5,5 +5,6 @@ export const APP_CONFIG = {
   APP_NAME: Config.APP_NAME || 'WatchMovie',
   ENVIRONMENT: Config.ENVIRONMENT || 'development',
   API_MOVIE_URL: Config.API_MOVIE_URL || 'https://ophim1.com/v1/api',
-  API_CLIENT_URL: Config.API_CLIENT_URL || 'https://ophim1.com/v1/api',
+  API_CLIENT_URL:
+    Config.API_CLIENT_URL || 'https://server-elysia.onrender.com/api',
 };

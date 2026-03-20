@@ -36,6 +36,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { useAppStore } from '@/store/useAppStore';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { SettingItem } from '@/components/common/SettingItem';
+import { useToastStore } from '@/store/useToastStore';
 
 const AVATAR_URL = 'https://api.dicebear.com/7.x/avataaars/png?seed=WatchMovie&backgroundColor=transparent';
 
@@ -45,6 +46,8 @@ const ProfileScreen = () => {
   
   const { 
     userToken, 
+    user,
+    setAuth,
     logout, 
     theme, 
     setTheme, 
@@ -53,7 +56,27 @@ const ProfileScreen = () => {
   } = useAppStore();
 
   const [notifications, setNotifications] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const { showToast } = useToastStore();
   const isLoggedIn = !!userToken;
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchProfile();
+    }
+  }, [isLoggedIn]);
+
+  const fetchProfile = async () => {
+    try {
+      const { default: authService } = await import('@/services/auth');
+      const profileData = await authService.profile();
+      if (profileData.user) {
+        setAuth(userToken, useAppStore.getState().refreshToken, profileData.user);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -63,7 +86,10 @@ const ProfileScreen = () => {
         { text: "Hủy", style: "cancel" },
         { 
           text: "Đăng xuất", 
-          onPress: logout, 
+          onPress: () => {
+            logout();
+            showToast({ message: 'Đã đăng xuất thành công', type: 'info' });
+          }, 
           style: "destructive" 
         }
       ]
@@ -163,12 +189,12 @@ const ProfileScreen = () => {
         </View>
         
         <View className="ml-5 flex-1">
-          <Text className="text-white text-xl font-bold">Standard Account</Text>
-          <Text className="text-gray-400 text-sm mt-1">antigravity@watchmovie.vn</Text>
+          <Text className="text-white text-xl font-bold">{user?.username || 'Người dùng'}</Text>
+          <Text className="text-gray-400 text-sm mt-1">{user?.email || 'Chưa cập nhật email'}</Text>
           <View className="flex-row items-center mt-3">
             <View className="bg-primary/20 px-3 py-1 rounded-full border border-primary/20">
               <Text className="text-primary text-[10px] font-black uppercase tracking-wider">
-                Khám phá
+                Standard Account
               </Text>
             </View>
             <TouchableOpacity className="ml-3 p-1">
