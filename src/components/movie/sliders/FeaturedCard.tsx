@@ -1,11 +1,9 @@
 import React from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import { View, Text, useWindowDimensions } from 'react-native';
 import { MovieItem } from '@/types/movies';
 import { Calendar } from 'lucide-react-native';
 import BaseCard from '../common/BaseCard';
-
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.55;
+import { getResponsiveMultiplier } from '@/utils/device';
 
 interface FeaturedCardProps {
   movie: MovieItem;
@@ -13,6 +11,9 @@ interface FeaturedCardProps {
 }
 
 const FeaturedCard: React.FC<FeaturedCardProps> = ({ movie, imageDomain }) => {
+  const { width } = useWindowDimensions();
+  const CARD_WIDTH = width * getResponsiveMultiplier(0.55, 0.35);
+
   return (
     <BaseCard
       movie={movie}
@@ -24,7 +25,6 @@ const FeaturedCard: React.FC<FeaturedCardProps> = ({ movie, imageDomain }) => {
       showEpisode={false}
       style={{ marginRight: 16 }}
     >
-      {/* Coming Soon badge */}
       <View className="absolute top-3 left-3 bg-primary/95 px-3 py-1 rounded-full flex-row items-center">
         <Calendar color="white" size={10} />
         <Text className="text-white text-[9px] font-black ml-1 uppercase tracking-wider">Sắp chiếu</Text>

@@ -1,10 +1,8 @@
 import React from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { MovieItem } from '@/types/movies';
 import BaseCard from '../common/BaseCard';
-
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.75;
+import { getResponsiveMultiplier } from '@/utils/device';
 
 interface LandscapeCardProps {
   movie: MovieItem;
@@ -12,6 +10,9 @@ interface LandscapeCardProps {
 }
 
 const LandscapeCard: React.FC<LandscapeCardProps> = ({ movie, imageDomain }) => {
+  const { width } = useWindowDimensions();
+  const CARD_WIDTH = width * getResponsiveMultiplier(0.75, 0.45);
+
   return (
     <BaseCard
       movie={movie}

@@ -3,14 +3,14 @@ import {
   View, 
   Text, 
   TextInput, 
-  FlatList, 
   TouchableOpacity, 
   ActivityIndicator,
   useWindowDimensions,
   Keyboard,
   TouchableWithoutFeedback
 } from 'react-native';
-import { Search, X, Film } from 'lucide-react-native';
+import { Search, X, Film, Clock, Trash2 } from 'lucide-react-native';
+import { FlashList } from '@shopify/flash-list';
 import { COLORS } from '@/constants/theme';
 import { useSearchMovies } from '@/hooks/useMovies';
 import { MovieItem } from '@/types/movies';
@@ -19,23 +19,33 @@ import { RootStackParamList } from '@/navigation/types';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BaseCard from '@/components/movie/common/BaseCard';
+import { useAppStore } from '@/store/useAppStore';
+import { SearchCardSkeleton } from '@/components/common/Skeleton';
 
 type Props = NativeStackScreenProps<RootStackParamList, any>;
 
-import { storage } from '@/screens/WelcomeScreen';
-import { Clock, Trash2 } from 'lucide-react-native';
+// Bypass for environment-specific FlashList property errors
+const AnyFlashList = FlashList as any;
 
-const SEARCH_HISTORY_KEY = 'search_history';
+import { isPad } from '@/utils/device';
 
 const SearchScreen = ({ navigation }: Props) => {
   const [keyword, setKeyword] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [history, setHistory] = useState<string[]>([]);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
-  const numColumns = isLandscape ? 5 : 3;
+  const numColumns = isPad 
+    ? (isLandscape ? 6 : 4) 
+    : (isLandscape ? 5 : 3);
+
+  const {
+    searchHistory,
+    addSearchKeyword,
+    removeSearchHistoryItem,
+    clearSearchHistory
+  } = useAppStore();
   
   const { 
     data, 
@@ -48,43 +58,11 @@ const SearchScreen = ({ navigation }: Props) => {
   const results = data?.pages.flatMap((page) => page?.data?.items || []) || [];
   const imageDomain = data?.pages[0]?.data?.APP_DOMAIN_CDN_IMAGE || 'https://img.phimapi.com';
 
-  useEffect(() => {
-    loadHistory();
-  }, []);
-
-  const loadHistory = () => {
-    const storedHistory = storage.getString(SEARCH_HISTORY_KEY);
-    if (storedHistory) {
-      setHistory(JSON.parse(storedHistory));
-    }
-  };
-
-  const saveToHistory = (newKeyword: string) => {
-    if (!newKeyword.trim()) return;
-    
-    const filteredHistory = history.filter(item => item !== newKeyword.trim());
-    const newHistory = [newKeyword.trim(), ...filteredHistory].slice(0, 10);
-    
-    setHistory(newHistory);
-    storage.set(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
-  };
-
-  const removeFromHistory = (itemToRemove: string) => {
-    const newHistory = history.filter(item => item !== itemToRemove);
-    setHistory(newHistory);
-    storage.set(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
-  };
-
-  const clearHistory = () => {
-    setHistory([]);
-    storage.remove(SEARCH_HISTORY_KEY);
-  };
-
   const handleSearch = (textToSearch?: string) => {
     const finalKeyword = textToSearch || keyword;
     if (finalKeyword.trim()) {
       setSearchQuery(finalKeyword);
-      saveToHistory(finalKeyword);
+      addSearchKeyword(finalKeyword);
       if (textToSearch) setKeyword(textToSearch);
       setIsFocused(false);
       Keyboard.dismiss();
@@ -119,14 +97,15 @@ const SearchScreen = ({ navigation }: Props) => {
     >
       <View className="flex-row justify-between items-center mb-4">
         <Text className="text-white text-lg font-bold">Lịch sử tìm kiếm</Text>
-        <TouchableOpacity onPress={clearHistory}>
+        <TouchableOpacity onPress={clearSearchHistory}>
           <Text className="text-primary font-semibold">Xóa tất cả</Text>
         </TouchableOpacity>
       </View>
-      <FlatList
-        data={history}
-        keyExtractor={(item) => item}
-        renderItem={({ item, index }) => (
+      <AnyFlashList
+        data={searchHistory}
+        keyExtractor={(item: string) => item}
+        estimatedItemSize={50}
+        renderItem={({ item, index }: any) => (
           <Animated.View 
             entering={FadeInDown.delay(index * 50).duration(300)}
             className="flex-row items-center py-3 border-b border-white/5"
@@ -138,7 +117,7 @@ const SearchScreen = ({ navigation }: Props) => {
             >
               <Text className="text-gray-300 text-base">{item}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => removeFromHistory(item)} className="p-2">
+            <TouchableOpacity onPress={() => removeSearchHistoryItem(item)} className="p-2">
               <Trash2 color={COLORS.textMuted} size={18} />
             </TouchableOpacity>
           </Animated.View>
@@ -147,6 +126,16 @@ const SearchScreen = ({ navigation }: Props) => {
         keyboardShouldPersistTaps="handled"
       />
     </Animated.View>
+  );
+
+  const renderSkeleton = () => (
+    <View className="flex-1 px-3 mt-2">
+      <View className="flex-row flex-wrap">
+        {Array.from({ length: isLandscape ? 10 : 6 }).map((_, i) => (
+          <SearchCardSkeleton key={i} width={(width - 48) / numColumns} />
+        ))}
+      </View>
+    </View>
   );
 
   const renderFooter = () => {
@@ -207,20 +196,17 @@ const SearchScreen = ({ navigation }: Props) => {
         </View>
       </View>
 
-      {isFocused && keyword === '' && history.length > 0 ? (
+      {isFocused && keyword === '' && searchHistory.length > 0 ? (
         renderHistory()
       ) : isLoading && !isFetchingNextPage ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={COLORS.primary} size="large" />
-          <Text className="text-gray-400 mt-4 animate-pulse">Đang tìm kiếm...</Text>
-        </View>
+        renderSkeleton()
       ) : results.length > 0 ? (
-        <FlatList
+        <AnyFlashList
           data={results}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item: MovieItem) => item._id}
           renderItem={renderItem}
           numColumns={numColumns}
-          key={numColumns}
+          estimatedItemSize={200}
           contentContainerStyle={{ padding: 12, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"

@@ -10,6 +10,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
 import { Slug } from '@/types/movies';
+import { Skeleton } from '../common/Skeleton';
+import { isPad, getResponsiveWidth } from '@/utils/device';
 
 export type SliderVariant = 'portrait' | 'landscape' | 'ranked' | 'featured';
 
@@ -33,24 +35,42 @@ const MovieRow: React.FC<MovieRowProps> = ({
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   if (loading) {
-    const skeletonAspect =
-      variant === 'landscape'
-        ? 'aspect-video'
-        : variant === 'featured'
-          ? 'aspect-[3/4]'
-          : 'aspect-[2/3]';
     const skeletonW =
-      variant === 'landscape' ? 256 : variant === 'featured' ? 176 : 128; // Equivalent to w-64, w-44, w-32
+      variant === 'landscape' 
+        ? getResponsiveWidth(256, 350) 
+        : variant === 'featured' 
+          ? getResponsiveWidth(176, 240) 
+          : getResponsiveWidth(128, 180);
+          
+    const skeletonH =
+      variant === 'landscape' 
+        ? getResponsiveWidth(144, 200) 
+        : variant === 'featured' 
+          ? getResponsiveWidth(235, 320) 
+          : getResponsiveWidth(192, 270);
+    
     return (
-      <View className="mb-8 px-4">
-        <View className="h-6 w-40 bg-white/5 rounded-full mb-4" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {[1, 2, 3].map(i => (
-            <View
-              key={i}
-              style={{ width: skeletonW }}
-              className={`mr-4 ${skeletonAspect} bg-white/5 rounded-2xl`}
-            />
+      <View className="mb-8">
+        <View className="px-6 mb-4">
+          <Skeleton width={160} height={24} borderRadius={12} />
+        </View>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 24 }}
+        >
+          {[1, 2, 3, 4, 5].map(i => (
+            <View key={i} className="mr-4">
+              <Skeleton 
+                width={skeletonW} 
+                height={skeletonH} 
+                borderRadius={16} 
+              />
+              <View className="mt-2">
+                <Skeleton width={skeletonW * 0.8} height={12} borderRadius={4} className="mb-1" />
+                <Skeleton width={skeletonW * 0.5} height={10} borderRadius={4} />
+              </View>
+            </View>
           ))}
         </ScrollView>
       </View>

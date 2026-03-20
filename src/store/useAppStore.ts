@@ -37,11 +37,17 @@ interface AppState {
   // App State
   hasSeenWelcome: boolean;
   setHasSeenWelcome: (seen: boolean) => void;
+
+  // Search
+  searchHistory: string[];
+  addSearchKeyword: (keyword: string) => void;
+  removeSearchHistoryItem: (keyword: string) => void;
+  clearSearchHistory: () => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       theme: 'dark',
       setTheme: (theme) => set({ theme }),
       
@@ -63,6 +69,25 @@ export const useAppStore = create<AppState>()(
       setHasSeenWelcome: (hasSeenWelcome) => {
         storage.set('hasSeenWelcome', hasSeenWelcome);
         set({ hasSeenWelcome });
+      },
+
+      searchHistory: JSON.parse(storage.getString('search_history') || '[]'),
+      addSearchKeyword: (keyword) => {
+        if (!keyword.trim()) return;
+        const currentHistory = get().searchHistory;
+        const filtered = currentHistory.filter(item => item !== keyword.trim());
+        const newHistory = [keyword.trim(), ...filtered].slice(0, 10);
+        storage.set('search_history', JSON.stringify(newHistory));
+        set({ searchHistory: newHistory });
+      },
+      removeSearchHistoryItem: (keyword) => {
+        const newHistory = get().searchHistory.filter(item => item !== keyword);
+        storage.set('search_history', JSON.stringify(newHistory));
+        set({ searchHistory: newHistory });
+      },
+      clearSearchHistory: () => {
+        storage.remove('search_history');
+        set({ searchHistory: [] });
       },
     }),
     {

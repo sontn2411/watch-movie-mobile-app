@@ -2,6 +2,7 @@ import React from 'react';
 import { DimensionValue } from 'react-native';
 import { MovieItem } from '@/types/movies';
 import BaseCard from './common/BaseCard';
+import { getResponsiveWidth } from '@/utils/device';
 
 interface MovieCardProps {
   movie: MovieItem;
@@ -13,7 +14,7 @@ interface MovieCardProps {
 const MovieCard: React.FC<MovieCardProps> = ({ 
   movie, 
   imageDomain, 
-  width = 128, 
+  width = getResponsiveWidth(128, 180), 
   marginRight = 16 
 }) => {
   return (

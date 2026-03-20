@@ -1,5 +1,13 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, DimensionValue } from 'react-native';
+import React, { useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  DimensionValue,
+  Animated,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
@@ -34,58 +42,93 @@ const BaseCard: React.FC<BaseCardProps> = ({
   activeOpacity = 0.8,
   style,
 }) => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  };
 
   return (
-    <TouchableOpacity
-      activeOpacity={activeOpacity}
-      onPress={() =>
-        navigation.navigate('Details', {
-          id: movie.slug,
-          title: movie.name,
-        })
-      }
-      style={[{ width }, style]}
+    <Animated.View
+      style={[{ width, transform: [{ scale: scaleAnim }] }, style]}
     >
-      <View style={[styles.cardContainer, { aspectRatio }]} className="bg-surface border border-white/5">
-        <Image
-          source={{ uri: `${imageDomain}/uploads/movies/${movie.thumb_url}` }}
-          className="w-full h-full"
-          resizeMode="cover"
-        />
-        
-        <LinearGradient
-          colors={['transparent', 'rgba(11, 17, 32, 0.9)']}
-          style={[styles.gradient, { height: gradientHeight }]}
-        />
+      <TouchableOpacity
+        activeOpacity={activeOpacity}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={() =>
+          navigation.navigate('Details', {
+            id: movie.slug,
+            title: movie.name,
+          })
+        }
+        className="w-full"
+      >
+        <View
+          style={[styles.cardContainer, { aspectRatio }]}
+          className="bg-surface border border-white/5"
+        >
+          <Image
+            source={{ uri: `${imageDomain}/uploads/movies/${movie.thumb_url}` }}
+            className="w-full h-full"
+            resizeMode="cover"
+          />
 
-        {showQuality && movie.quality && (
-          <View className="absolute top-2 left-2 bg-primary/90 px-2 py-0.5 rounded-md">
-            <Text className="text-[10px] font-black text-white uppercase tracking-tighter">
-              {movie.quality}
-            </Text>
-          </View>
-        )}
+          <LinearGradient
+            colors={['transparent', 'rgba(11, 17, 32, 0.9)']}
+            style={[styles.gradient, { height: gradientHeight }]}
+          />
 
-        <View className="absolute bottom-2 left-2 right-2 flex-row items-center justify-between">
-          {showEpisode && (
-            <Text className="text-[10px] text-slate-300 font-medium flex-1 mr-1" numberOfLines={1}>
-              {movie.episode_current}
-            </Text>
-          )}
-          {showPlayButton && (
-            <View className="bg-white/20 p-1 rounded-full">
-              <Play color="white" size={10} fill="white" />
+          {showQuality && movie.quality && (
+            <View className="absolute top-2 left-2 bg-primary/90 px-2 py-0.5 rounded-md">
+              <Text className="text-[10px] font-black text-white uppercase tracking-tighter">
+                {movie.quality}
+              </Text>
             </View>
           )}
+
+          <View className="absolute bottom-2 left-2 right-2 flex-row items-center justify-between">
+            {showEpisode && (
+              <Text
+                className="text-[10px] text-slate-300 font-medium flex-1 mr-1"
+                numberOfLines={1}
+              >
+                {movie.episode_current}
+              </Text>
+            )}
+            {showPlayButton && (
+              <View className="bg-white/20 p-1 rounded-full">
+                <Play color="white" size={10} fill="white" />
+              </View>
+            )}
+          </View>
+
+          {children}
         </View>
-        
-        {children}
-      </View>
-      <Text className="text-white mt-2 text-xs font-semibold leading-tight" numberOfLines={2}>
-        {movie.name}
-      </Text>
-    </TouchableOpacity>
+        <Text
+          className="text-white mt-2 text-xs font-semibold leading-tight"
+          numberOfLines={2}
+        >
+          {movie.name}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
