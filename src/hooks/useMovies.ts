@@ -31,10 +31,18 @@ export const useMovieList = (slug: Slug, limit = 24, page = 1) => {
   });
 };
 
-export const useSearchMovies = (keyword: string, limit = 24, page = 1) => {
-  return useQuery({
-    queryKey: ['search', keyword, page, limit],
-    queryFn: () => movieService.searchMovie({ keyword, limit, page }),
+export const useSearchMovies = (keyword: string, limit = 24) => {
+  return useInfiniteQuery({
+    queryKey: ['search', keyword, limit],
+    queryFn: ({ pageParam = 1 }) =>
+      movieService.searchMovie({ keyword, limit, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage?.data?.params?.pagination) return undefined;
+      const { currentPage, totalItems, totalItemsPerPage } = lastPage.data.params.pagination;
+      const totalPages = Math.ceil(totalItems / totalItemsPerPage);
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
     enabled: !!keyword,
   });
 };

@@ -68,7 +68,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
             case 'Trang chủ':
               iconName = 'home';
               break;
-            case 'Khám phá':
+            case 'Tìm kiếm':
               iconName = 'search';
               break;
             case 'Tải về':

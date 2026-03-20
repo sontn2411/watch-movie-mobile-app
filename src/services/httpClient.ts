@@ -30,7 +30,9 @@ httpClient.interceptors.response.use(
   },
   (error) => {
     const message = error.response?.data?.message || error.message || 'Unknown Error';
-    console.error(`[API Error] ${message}`);
+    if (__DEV__) {
+      console.error(`[API Error] ${message}`);
+    }
     return Promise.reject(error);
   }
 );

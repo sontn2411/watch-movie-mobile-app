@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, DimensionValue } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/RootNavigator';
+import { RootStackParamList } from '@/navigation/types';
 import LinearGradient from 'react-native-linear-gradient';
 import { Play } from 'lucide-react-native';
 import { MovieItem } from '@/types/movies';

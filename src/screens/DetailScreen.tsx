@@ -9,6 +9,7 @@ import {
   Dimensions,
   StyleSheet,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
@@ -110,11 +111,8 @@ const DetailScreen = ({ route, navigation }: Props) => {
   // Memoized Sorted Episodes
   const sortedEpisodes = useMemo(() => {
     const episodes = data?.data.item.episodes?.[activeServer]?.server_data || [];
-    return [...episodes].sort((a, b) => {
-      const idxA = data?.data.item.episodes?.[activeServer]?.server_data.indexOf(a) ?? 0;
-      const idxB = data?.data.item.episodes?.[activeServer]?.server_data.indexOf(b) ?? 0;
-      return isDesc ? idxB - idxA : idxA - idxB;
-    });
+    if (!isDesc) return episodes;
+    return [...episodes].reverse();
   }, [data, activeServer, isDesc]);
 
   if (isLoading) {
@@ -159,9 +157,15 @@ const DetailScreen = ({ route, navigation }: Props) => {
       {/* Floating Back Button */}
       <View style={{ position: 'absolute', top: insets.top + 10, left: 20, zIndex: 30 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <BlurView blurType="dark" blurAmount={10} style={styles.headerIcon}>
-            <ChevronLeft color="white" size={24} />
-          </BlurView>
+          {Platform.OS === 'ios' ? (
+            <BlurView blurType="dark" blurAmount={10} style={styles.headerIcon}>
+              <ChevronLeft color="white" size={24} />
+            </BlurView>
+          ) : (
+            <View style={[styles.headerIcon, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+              <ChevronLeft color="white" size={24} />
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -196,7 +200,7 @@ const DetailScreen = ({ route, navigation }: Props) => {
               />
             </View>
             <View className="flex-1 ml-5 mb-2">
-              <Text className="text-white text-2xl font-black leading-tight mb-1" style={{ fontFamily: 'Righteous' }} numberOfLines={2}>
+              <Text className="text-white text-2xl font-black leading-tight mb-1" numberOfLines={2}>
                 {movie.name}
               </Text>
               <Text className="text-muted text-sm italic font-medium" numberOfLines={1}>{movie.origin_name}</Text>
@@ -218,7 +222,24 @@ const DetailScreen = ({ route, navigation }: Props) => {
 
           {/* Play CTA */}
           <Animated.View entering={FadeInUp.delay(400).duration(600)} style={animatedPlayButtonStyle}>
-            <TouchableOpacity activeOpacity={0.9} onPressIn={onPressIn} onPressOut={onPressOut} className="mt-6">
+            <TouchableOpacity 
+              activeOpacity={0.9} 
+              onPressIn={onPressIn} 
+              onPressOut={onPressOut} 
+              className="mt-6"
+              onPress={() => {
+                const firstEpisode = movie.episodes?.[0]?.server_data?.[0];
+                if (firstEpisode) {
+                  navigation.navigate('Watch', {
+                    url: firstEpisode.link_m3u8 || firstEpisode.link_embed,
+                    title: movie.name,
+                    currentEpisode: firstEpisode.name,
+                    slug: movie.slug,
+                    serverIndex: 0
+                  });
+                }
+              }}
+            >
               <LinearGradient colors={[COLORS.primary, '#2563EB']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.playButton}>
                 <Play color="white" size={24} fill="white" />
                 <Text className="text-white font-black ml-3 text-lg tracking-widest uppercase">XEM NGAY</Text>
@@ -242,8 +263,8 @@ const DetailScreen = ({ route, navigation }: Props) => {
               <Animated.View entering={FadeIn}>
                 {/* Meta Extended */}
                 <View className="mb-6 flex-row flex-wrap">
-                  {movie.director?.map((d, i) => <MetaPill key={i} icon={Video} text={d} />)}
-                  {movie.country?.map((c) => <MetaPill key={c.id} icon={MapPin} text={c.name} />)}
+                  {movie.director?.map((d, i) => d && <MetaPill key={i} icon={Video} text={d} />)}
+                  {movie.country?.map((c) => c && <MetaPill key={c.id} icon={MapPin} text={c.name} />)}
                 </View>
 
                 {/* Genres */}
@@ -343,6 +364,15 @@ const DetailScreen = ({ route, navigation }: Props) => {
                         style={{ width: btnSize, height: btnSize }}
                         className="bg-white/5 border border-white/10 rounded-xl items-center justify-center m-[4px]"
                         activeOpacity={0.7}
+                        onPress={() => {
+                          navigation.navigate('Watch', {
+                            url: ep.link_m3u8 || ep.link_embed,
+                            title: movie.name,
+                            currentEpisode: ep.name,
+                            slug: movie.slug,
+                            serverIndex: activeServer
+                          });
+                        }}
                       >
                         <Text className="text-white text-[10px] font-black leading-none">{ep.name}</Text>
                       </TouchableOpacity>
