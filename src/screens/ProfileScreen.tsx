@@ -140,6 +140,30 @@ const ProfileScreen = () => {
         </View>
       </Animated.View>
 
+      <SectionHeader title="Hoạt động" />
+      <View className="rounded-3xl bg-surface border border-border overflow-hidden">
+        <SettingItem 
+          icon={<PlayCircle color={colors.primary} size={20} />} 
+          label="Lịch sử xem phim" 
+          value={`${watchHistory.length} bộ phim đã xem`}
+          onPress={() => navigation.navigate('History')}
+        />
+        <SettingItem 
+          icon={<Heart color="#EF4444" size={20} />} 
+          label="Danh sách yêu thích" 
+          value={`${favorites.length} bộ phim`}
+          onPress={() => navigation.navigate('Favorites')}
+        />
+        <SettingItem 
+          icon={<Download color={colors.accent} size={20} />} 
+          label="Phim đã tải về" 
+          value={`${tasks.length} bộ phim`}
+          // @ts-ignore
+          onPress={() => navigation.navigate('Tải về')}
+          isLast
+        />
+      </View>
+
       <SectionHeader title="Cài đặt chung" />
       <View className="rounded-3xl bg-surface border border-border overflow-hidden">
         <SettingItem 

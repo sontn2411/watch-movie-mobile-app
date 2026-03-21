@@ -155,6 +155,16 @@ const DetailScreen = ({ route, navigation }: Props) => {
     return [...episodes].reverse();
   }, [data, activeServer, isDesc]);
 
+  // Tính trạng thái phim chưa phát hành (episode trả về nhưng không có link)
+  const isUnreleased = useMemo(() => {
+    const movie = data?.data.item;
+    if (!movie?.episodes || movie.episodes.length === 0) return false;
+    const firstServerEps = movie.episodes[0].server_data || [];
+    if (firstServerEps.length === 0) return false;
+    // Kiểm tra tập đầu tiên có link m3u8 hoặc embed không
+    return !firstServerEps[0].link_m3u8 && !firstServerEps[0].link_embed;
+  }, [data]);
+
   if (isLoading) {
     return (
       <View className="flex-1 bg-background items-center justify-center">
@@ -354,50 +364,73 @@ const DetailScreen = ({ route, navigation }: Props) => {
             style={animatedPlayButtonStyle}
           >
             <View className="flex-row items-center mt-6">
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPressIn={onPressIn}
-                onPressOut={onPressOut}
-                className="flex-1 mr-3"
-                onPress={() => {
-                  const firstEpisode = movie.episodes?.[0]?.server_data?.[0];
-                  if (firstEpisode) {
-                    navigation.navigate('Watch', {
-                      url: firstEpisode.link_m3u8 || firstEpisode.link_embed,
-                      title: movie.name,
-                      currentEpisode: firstEpisode.name,
-                      slug: movie.slug,
-                      serverIndex: 0,
-                    });
-                  }
-                }}
-              >
-                <LinearGradient
-                  colors={[COLORS.primary, '#2563EB']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.playButton}
+              {isUnreleased ? (
+                <View
+                  style={[
+                    styles.playButton,
+                    {
+                      flex: 1,
+                      marginRight: 12,
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                    },
+                  ]}
                 >
-                  <Play color="white" size={24} fill="white" />
-                  <Text className="text-white font-black ml-3 text-lg tracking-widest uppercase">
-                    XEM NGAY
+                  <Text className="text-white font-black text-lg tracking-widest uppercase opacity-60">
+                    SẮP RA MẮT
                   </Text>
-                </LinearGradient>
-              </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPressIn={onPressIn}
+                  onPressOut={onPressOut}
+                  className="flex-1 mr-3"
+                  onPress={() => {
+                    const firstEpisode = movie.episodes?.[0]?.server_data?.[0];
+                    if (firstEpisode) {
+                      navigation.navigate('Watch', {
+                        url: firstEpisode.link_m3u8 || firstEpisode.link_embed,
+                        title: movie.name,
+                        currentEpisode: firstEpisode.name,
+                        slug: movie.slug,
+                        serverIndex: 0,
+                      });
+                    }
+                  }}
+                >
+                  <LinearGradient
+                    colors={[COLORS.primary, '#2563EB']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.playButton}
+                  >
+                    <Play color="white" size={24} fill="white" />
+                    <Text className="text-white font-black ml-3 text-lg tracking-widest uppercase">
+                      XEM NGAY
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 onPress={toggleFavorite}
-                className="bg-white/10 w-16 h-16 rounded-2xl items-center justify-center border border-white/20 mr-3"
+                className={`bg-white/10 w-16 h-16 rounded-2xl items-center justify-center border border-white/20 ${isUnreleased ? '' : 'mr-3'}`}
               >
-                <Heart color={isFav ? '#EF4444' : 'white'} fill={isFav ? '#EF4444' : 'transparent'} size={24} />
+                <Heart
+                  color={isFav ? '#EF4444' : 'white'}
+                  fill={isFav ? '#EF4444' : 'transparent'}
+                  size={24}
+                />
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => setShowDownloadModal(true)}
-                className="bg-white/10 w-16 h-16 rounded-2xl items-center justify-center border border-white/20"
-              >
-                <Download color="white" size={24} />
-              </TouchableOpacity>
+              {!isUnreleased && (
+                <TouchableOpacity
+                  onPress={() => setShowDownloadModal(true)}
+                  className="bg-white/10 w-16 h-16 rounded-2xl items-center justify-center border border-white/20"
+                >
+                  <Download color="white" size={24} />
+                </TouchableOpacity>
+              )}
             </View>
           </Animated.View>
 
@@ -519,89 +552,99 @@ const DetailScreen = ({ route, navigation }: Props) => {
               </Animated.View>
             ) : (
               <Animated.View entering={FadeIn}>
-                {/* Server Selection */}
-                {movie.episodes && movie.episodes.length > 1 && (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    className="mb-6"
-                  >
-                    {movie.episodes.map((server, idx) => (
-                      <TouchableOpacity
-                        key={idx}
-                        onPress={() => {
-                          setActiveServer(idx);
-                          setActiveTab('episodes');
-                        }}
-                        className={`px-6 py-2.5 rounded-2xl mr-3 border ${activeServer === idx ? 'bg-primary border-primary' : 'bg-surface border-border'}`}
-                      >
-                        <Text
-                          className={`text-[11px] font-black uppercase tracking-widest ${activeServer === idx ? 'text-white' : 'text-muted'}`}
-                        >
-                          {server.server_name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                )}
-
-                {/* Episodes Header with Sort */}
-                <View className="flex-row items-center justify-between mb-6 px-1">
-                  <View className="flex-row items-center">
-                    <Globe color={colors.primary} size={16} />
-                    <Text className="text-primary text-sm font-black ml-2 uppercase tracking-widest">
-                      {movie.episodes?.[activeServer]?.server_name ||
-                        'Tập phim'}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => setIsDesc(!isDesc)}
-                    className="flex-row items-center bg-surface px-3 py-1.5 rounded-xl border border-border"
-                  >
-                    {isDesc ? (
-                      <ArrowDownAz color={colors.primary} size={14} />
-                    ) : (
-                      <ArrowUpAz color={colors.primary} size={14} />
-                    )}
-                    <Text className="text-muted text-[10px] font-bold ml-2 uppercase">
-                      {isDesc ? 'Mới nhất' : 'Cũ nhất'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View className="flex-row flex-wrap items-center">
-                  {sortedEpisodes.map((ep, eIdx) => {
-                    const btnSize = (width - 48 - 40) / 5;
-                    return (
-                      <TouchableOpacity
-                        key={eIdx}
-                        style={{ width: btnSize, height: btnSize }}
-                        className="bg-surface border border-border rounded-xl items-center justify-center m-[4px]"
-                        activeOpacity={0.7}
-                        onPress={() => {
-                          navigation.navigate('Watch', {
-                            url: ep.link_m3u8 || ep.link_embed,
-                            title: movie.name,
-                            currentEpisode: ep.name,
-                            slug: movie.slug,
-                            serverIndex: activeServer,
-                          });
-                        }}
-                      >
-                        <Text className="text-text text-[10px] font-black leading-none">
-                          {ep.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                {(!movie.episodes || movie.episodes.length === 0) && (
+                {isUnreleased ? (
                   <View className="items-center py-10">
-                    <Text className="text-muted italic">
-                      Đang cập nhật tập phim...
+                    <Text className="text-muted italic font-medium">
+                      Phim chưa công chiếu, vui lòng quay lại sau!
                     </Text>
                   </View>
+                ) : (
+                  <>
+                    {/* Server Selection */}
+                    {movie.episodes && movie.episodes.length > 1 && (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        className="mb-6"
+                      >
+                        {movie.episodes.map((server, idx) => (
+                          <TouchableOpacity
+                            key={idx}
+                            onPress={() => {
+                              setActiveServer(idx);
+                              setActiveTab('episodes');
+                            }}
+                            className={`px-6 py-2.5 rounded-2xl mr-3 border ${activeServer === idx ? 'bg-primary border-primary' : 'bg-surface border-border'}`}
+                          >
+                            <Text
+                              className={`text-[11px] font-black uppercase tracking-widest ${activeServer === idx ? 'text-white' : 'text-muted'}`}
+                            >
+                              {server.server_name}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    )}
+
+                    {/* Episodes Header with Sort */}
+                    <View className="flex-row items-center justify-between mb-6 px-1">
+                      <View className="flex-row items-center">
+                        <Globe color={colors.primary} size={16} />
+                        <Text className="text-primary text-sm font-black ml-2 uppercase tracking-widest">
+                          {movie.episodes?.[activeServer]?.server_name ||
+                            'Tập phim'}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => setIsDesc(!isDesc)}
+                        className="flex-row items-center bg-surface px-3 py-1.5 rounded-xl border border-border"
+                      >
+                        {isDesc ? (
+                          <ArrowDownAz color={colors.primary} size={14} />
+                        ) : (
+                          <ArrowUpAz color={colors.primary} size={14} />
+                        )}
+                        <Text className="text-muted text-[10px] font-bold ml-2 uppercase">
+                          {isDesc ? 'Mới nhất' : 'Cũ nhất'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View className="flex-row flex-wrap items-center">
+                      {sortedEpisodes.map((ep, eIdx) => {
+                        const btnSize = (width - 48 - 40) / 5;
+                        return (
+                          <TouchableOpacity
+                            key={eIdx}
+                            style={{ width: btnSize, height: btnSize }}
+                            className="bg-surface border border-border rounded-xl items-center justify-center m-[4px]"
+                            activeOpacity={0.7}
+                            onPress={() => {
+                              navigation.navigate('Watch', {
+                                url: ep.link_m3u8 || ep.link_embed,
+                                title: movie.name,
+                                currentEpisode: ep.name,
+                                slug: movie.slug,
+                                serverIndex: activeServer,
+                              });
+                            }}
+                          >
+                            <Text className="text-text text-[10px] font-black leading-none">
+                              {ep.name}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+
+                    {(!movie.episodes || movie.episodes.length === 0) && (
+                      <View className="items-center py-10">
+                        <Text className="text-muted italic">
+                          Đang cập nhật tập phim...
+                        </Text>
+                      </View>
+                    )}
+                  </>
                 )}
               </Animated.View>
             )}
@@ -668,34 +711,44 @@ const DetailScreen = ({ route, navigation }: Props) => {
                   return (
                     <View className="flex-row items-center justify-between py-4 border-b border-white/5">
                       <View className="flex-row items-center flex-1">
-                        <View className={`w-12 h-12 rounded-2xl items-center justify-center mr-4 ${isCompleted ? 'bg-green-500/10' : 'bg-primary/10'}`}>
+                        <View
+                          className={`w-12 h-12 rounded-2xl items-center justify-center mr-4 ${isCompleted ? 'bg-green-500/10' : 'bg-primary/10'}`}
+                        >
                           {isCompleted ? (
-                             <CheckCircle2 size={22} color="#22C55E" />
+                            <CheckCircle2 size={22} color="#22C55E" />
                           ) : (
-                             <FileVideo size={20} color={colors.primary} />
+                            <FileVideo size={20} color={colors.primary} />
                           )}
                         </View>
                         <View className="flex-1">
-                          <Text className={`text-text font-bold ${isCompleted ? 'text-green-500' : ''}`}>
+                          <Text
+                            className={`text-text font-bold ${isCompleted ? 'text-green-500' : ''}`}
+                          >
                             Tập {item.name}
                           </Text>
                           <Text className="text-muted text-[10px] mt-0.5">
-                            {isCompleted ? 'Đã tải xong • 100%' : isDownloading ? `Đang tải... ${Math.round((task?.progress || 0) * 100)}%` : 'Sẵn sàng tải xuống'}
+                            {isCompleted
+                              ? 'Đã tải xong • 100%'
+                              : isDownloading
+                                ? `Đang tải... ${Math.round((task?.progress || 0) * 100)}%`
+                                : 'Sẵn sàng tải xuống'}
                           </Text>
                         </View>
                       </View>
-                      
+
                       <View className="items-center justify-center min-w-[80px]">
                         {isDownloading ? (
-                           <CircularProgress 
-                             progress={task?.progress || 0} 
-                             size={36} 
-                             showText 
-                           />
+                          <CircularProgress
+                            progress={task?.progress || 0}
+                            size={36}
+                            showText
+                          />
                         ) : isCompleted ? (
-                           <View className="bg-green-500/20 px-3 py-1.5 rounded-xl border border-green-500/30">
-                              <Text className="text-green-500 text-[10px] font-black uppercase">Đã tải</Text>
-                           </View>
+                          <View className="bg-green-500/20 px-3 py-1.5 rounded-xl border border-green-500/30">
+                            <Text className="text-green-500 text-[10px] font-black uppercase">
+                              Đã tải
+                            </Text>
+                          </View>
                         ) : (
                           <TouchableOpacity
                             onPress={() => {
@@ -711,7 +764,9 @@ const DetailScreen = ({ route, navigation }: Props) => {
                             }}
                             className="bg-primary px-4 py-2 rounded-xl"
                           >
-                            <Text className="text-white text-[11px] font-black uppercase">Tải xuống</Text>
+                            <Text className="text-white text-[11px] font-black uppercase">
+                              Tải xuống
+                            </Text>
                           </TouchableOpacity>
                         )}
                       </View>
