@@ -7,4 +7,5 @@ export type RootStackParamList = {
   Watch: { url: string; title: string; currentEpisode: string; slug: string; serverIndex?: number };
   Welcome: undefined;
   Auth: undefined;
+  History: undefined;
 };

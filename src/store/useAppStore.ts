@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
+import { WatchHistoryItem } from '../types/movies';
 
 const storage = createMMKV();
 
@@ -50,6 +51,12 @@ interface AppState {
   addSearchKeyword: (keyword: string) => void;
   removeSearchHistoryItem: (keyword: string) => void;
   clearSearchHistory: () => void;
+
+  // Watch History
+  watchHistory: WatchHistoryItem[];
+  addToHistory: (movie: WatchHistoryItem) => void;
+  removeFromHistory: (id: string) => void;
+  clearHistory: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -108,6 +115,24 @@ export const useAppStore = create<AppState>()(
       clearSearchHistory: () => {
         storage.remove('search_history');
         set({ searchHistory: [] });
+      },
+
+      watchHistory: JSON.parse(storage.getString('watch_history') || '[]'),
+      addToHistory: (movie) => {
+        const currentHistory = get().watchHistory;
+        const filtered = currentHistory.filter(item => item._id !== movie._id);
+        const newHistory = [movie, ...filtered].slice(0, 50); // Keep last 50 items
+        storage.set('watch_history', JSON.stringify(newHistory));
+        set({ watchHistory: newHistory });
+      },
+      removeFromHistory: (id) => {
+        const newHistory = get().watchHistory.filter(item => item._id !== id);
+        storage.set('watch_history', JSON.stringify(newHistory));
+        set({ watchHistory: newHistory });
+      },
+      clearHistory: () => {
+        storage.remove('watch_history');
+        set({ watchHistory: [] });
       },
     }),
     {

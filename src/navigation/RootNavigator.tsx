@@ -6,6 +6,7 @@ import SeeMoreScreen from '@/screens/SeeMoreScreen';
 import WatchScreen from '@/screens/WatchScreen';
 import WelcomeScreen, { storage } from '@/screens/WelcomeScreen';
 import AuthScreen from '@/screens/AuthScreen';
+import HistoryScreen from '@/screens/HistoryScreen';
 import { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -56,6 +57,11 @@ export default function RootNavigator() {
       <Stack.Screen
         name="Watch"
         component={WatchScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="History"
+        component={HistoryScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

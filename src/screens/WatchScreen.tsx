@@ -33,6 +33,7 @@ import {
   Minimize,
 } from 'lucide-react-native';
 import { useMovieDetails } from '@/hooks/useMovies';
+import { useAppStore } from '@/store/useAppStore';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -49,6 +50,7 @@ const WatchScreen = ({ route, navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const videoRef = useRef<VideoRef>(null);
   const { colors, isDark } = useTheme();
+  const { addToHistory } = useAppStore();
 
   const { data, isLoading: isDetailsLoading } = useMovieDetails(slug);
   
@@ -150,6 +152,22 @@ const WatchScreen = ({ route, navigation }: Props) => {
       Orientation.unlockAllOrientations();
     };
   }, []);
+
+  useEffect(() => {
+    if (data?.data.item && activeUrl) {
+      const item = data.data.item;
+      addToHistory({
+        _id: item._id,
+        name: item.name,
+        slug: item.slug,
+        thumb_url: item.thumb_url,
+        poster_url: item.poster_url,
+        lastWatchedTime: Date.now(),
+        episodeName: activeEpName,
+        serverName: data.data.item.episodes?.[activeServer]?.server_name,
+      });
+    }
+  }, [data, activeUrl, activeEpName, activeServer, addToHistory]);
 
   const isEmbed = useMemo(() => {
     return !activeUrl?.includes('.m3u8') || activeUrl?.includes('embed');

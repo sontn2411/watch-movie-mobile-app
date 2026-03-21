@@ -172,3 +172,14 @@ export interface ResponseMovieDetail {
     APP_DOMAIN_CDN_IMAGE: string;
   };
 }
+
+export interface WatchHistoryItem {
+  _id: string;
+  name: string;
+  slug: string;
+  thumb_url: string;
+  poster_url: string;
+  lastWatchedTime: number; // timestamp
+  episodeName?: string;
+  serverName?: string;
+}

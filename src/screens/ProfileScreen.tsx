@@ -53,7 +53,8 @@ const ProfileScreen = () => {
     theme, 
     setTheme, 
     language, 
-    setLanguage 
+    setLanguage,
+    watchHistory
   } = useAppStore();
 
   const [notifications, setNotifications] = useState(true);
@@ -230,7 +231,8 @@ const ProfileScreen = () => {
         <SettingItem 
           icon={<PlayCircle color={colors.primary} size={20} />} 
           label="Lịch sử xem phim" 
-          value="128 bộ phim đã xem"
+          value={`${watchHistory.length} bộ phim đã xem`}
+          onPress={() => navigation.navigate('History')}
         />
         <SettingItem 
           icon={<Heart color="#EF4444" size={20} />} 
