@@ -50,7 +50,9 @@ import {
   ChevronUp,
   Download,
   FileVideo,
+  Heart,
 } from 'lucide-react-native';
+import { useAppStore } from '@/store/useAppStore';
 import { useDownloadStore } from '@/store/useDownloadStore';
 import { downloadService } from '../services/DownloadService';
 import { DownloadTask } from '@/store/useDownloadStore';
@@ -78,6 +80,26 @@ const DetailScreen = ({ route, navigation }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const { tasks } = useDownloadStore();
+  const { isFavorite, addFavorite, removeFavorite } = useAppStore();
+
+  const isFav = data?.data.item ? isFavorite(data.data.item._id) : false;
+
+  const toggleFavorite = useCallback(() => {
+    if (!data?.data.item) return;
+    const item = data.data.item;
+    if (isFav) {
+      removeFavorite(item._id);
+    } else {
+      addFavorite({
+        _id: item._id,
+        name: item.name,
+        slug: item.slug,
+        thumb_url: item.thumb_url,
+        poster_url: item.poster_url,
+        lastWatchedTime: Date.now(),
+      });
+    }
+  }, [isFav, data, addFavorite, removeFavorite]);
 
   // Scroll values for Parallax
   const scrollY = useSharedValue(0);
@@ -361,6 +383,13 @@ const DetailScreen = ({ route, navigation }: Props) => {
                     XEM NGAY
                   </Text>
                 </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={toggleFavorite}
+                className="bg-white/10 w-16 h-16 rounded-2xl items-center justify-center border border-white/20 mr-3"
+              >
+                <Heart color={isFav ? '#EF4444' : 'white'} fill={isFav ? '#EF4444' : 'transparent'} size={24} />
               </TouchableOpacity>
 
               <TouchableOpacity

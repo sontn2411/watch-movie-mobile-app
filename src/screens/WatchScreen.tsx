@@ -10,6 +10,7 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import Video, {
   VideoRef,
@@ -56,7 +57,7 @@ const WatchScreen = ({ route, navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const videoRef = useRef<VideoRef>(null);
   const { colors, isDark } = useTheme();
-  const { addToHistory } = useAppStore();
+  const { addToHistory, watchHistory } = useAppStore();
 
   const { data, isLoading: isDetailsLoading } = useMovieDetails(slug);
   
@@ -87,6 +88,10 @@ const WatchScreen = ({ route, navigation }: Props) => {
 
   // ... (keeping existing effects/handlers)
 
+  const currentTimeRef = useRef(0);
+  const durationRef = useRef(0);
+  const hasPromptedResume = useRef(false);
+
   const formatTime = (timeInSeconds: number) => {
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
@@ -95,13 +100,35 @@ const WatchScreen = ({ route, navigation }: Props) => {
 
   const onProgress = (data: { currentTime: number }) => {
     setCurrentTime(data.currentTime);
+    currentTimeRef.current = data.currentTime;
   };
 
   const onLoad = (data: any) => {
     setDuration(data.duration);
+    durationRef.current = data.duration;
     setIsBuffering(false);
     if (data.videoTracks) {
       setVideoTracks(data.videoTracks);
+    }
+
+    // Check resume playback
+    if (!hasPromptedResume.current && !isEmbed) {
+      hasPromptedResume.current = true;
+      const historyItem = watchHistory.find(item => item._id === route.params.slug || item.slug === route.params.slug);
+      
+      if (historyItem && historyItem.currentTime && historyItem.duration && historyItem.episodeName === activeEpName) {
+        // If they watched > 5 seconds and have more than 10 seconds left
+        if (historyItem.currentTime > 5 && historyItem.duration - historyItem.currentTime > 10) {
+          Alert.alert(
+            'Tiếp tục xem?',
+            `Bạn đang xem dở tập ${activeEpName} ở phút thứ ${formatTime(historyItem.currentTime)}. Bạn có muốn xem tiếp không?`,
+            [
+              { text: 'Từ đầu', style: 'cancel', onPress: () => videoRef.current?.seek(0) },
+              { text: 'Xem tiếp', onPress: () => videoRef.current?.seek(historyItem.currentTime!) },
+            ]
+          );
+        }
+      }
     }
   };
 
@@ -130,6 +157,8 @@ const WatchScreen = ({ route, navigation }: Props) => {
     setActiveEpName(ep.name);
     setPlayingServerIndex(activeServer);
     setCurrentTime(0);
+    currentTimeRef.current = 0;
+    hasPromptedResume.current = false;
     setIsBuffering(true);
   };
 
@@ -184,6 +213,25 @@ const WatchScreen = ({ route, navigation }: Props) => {
         serverName: data.data.item.episodes?.[activeServer]?.server_name,
       });
     }
+
+    return () => {
+      // Cleanup to save current time
+      if (data?.data.item && currentTimeRef.current > 10 && durationRef.current > 0) {
+        const item = data.data.item;
+        addToHistory({
+          _id: item._id,
+          name: item.name,
+          slug: item.slug,
+          thumb_url: item.thumb_url,
+          poster_url: item.poster_url,
+          lastWatchedTime: Date.now(),
+          episodeName: activeEpName,
+          serverName: data.data.item.episodes?.[activeServer]?.server_name,
+          currentTime: currentTimeRef.current,
+          duration: durationRef.current,
+        });
+      }
+    };
   }, [data, activeUrl, activeEpName, activeServer, addToHistory]);
 
   const isEmbed = useMemo(() => {

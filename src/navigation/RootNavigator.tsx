@@ -7,6 +7,7 @@ import WatchScreen from '@/screens/WatchScreen';
 import WelcomeScreen, { storage } from '@/screens/WelcomeScreen';
 import AuthScreen from '@/screens/AuthScreen';
 import HistoryScreen from '@/screens/HistoryScreen';
+import FavoritesScreen from '@/screens/FavoritesScreen';
 import WatchOfflineScreen from '@/screens/WatchOfflineScreen';
 import { RootStackParamList } from './types';
 
@@ -69,6 +70,11 @@ export default function RootNavigator() {
       <Stack.Screen
         name="History"
         component={HistoryScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Favorites"
+        component={FavoritesScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen

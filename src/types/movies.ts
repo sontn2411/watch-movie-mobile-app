@@ -182,4 +182,6 @@ export interface WatchHistoryItem {
   lastWatchedTime: number; // timestamp
   episodeName?: string;
   serverName?: string;
+  currentTime?: number;
+  duration?: number;
 }

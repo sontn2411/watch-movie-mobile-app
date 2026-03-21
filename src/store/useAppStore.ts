@@ -57,6 +57,13 @@ interface AppState {
   addToHistory: (movie: WatchHistoryItem) => void;
   removeFromHistory: (id: string) => void;
   clearHistory: () => void;
+
+  // Favorites
+  favorites: WatchHistoryItem[];
+  addFavorite: (movie: WatchHistoryItem) => void;
+  removeFavorite: (id: string) => void;
+  isFavorite: (id: string) => boolean;
+  clearFavorites: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -120,8 +127,22 @@ export const useAppStore = create<AppState>()(
       watchHistory: JSON.parse(storage.getString('watch_history') || '[]'),
       addToHistory: (movie) => {
         const currentHistory = get().watchHistory;
+        const existingIndex = currentHistory.findIndex(item => item._id === movie._id);
+        
+        let updatedMovie = { ...movie };
+        
+        // Preserve previous currentTime/duration if the new one doesn't have it (e.g. just opening details)
+        // But if we're actually passing a new currentTime (0 or more), we use it.
+        if (existingIndex >= 0) {
+          const existing = currentHistory[existingIndex];
+          if (movie.currentTime === undefined && existing.currentTime !== undefined) {
+             updatedMovie.currentTime = existing.currentTime;
+             updatedMovie.duration = existing.duration;
+          }
+        }
+
         const filtered = currentHistory.filter(item => item._id !== movie._id);
-        const newHistory = [movie, ...filtered].slice(0, 50); // Keep last 50 items
+        const newHistory = [updatedMovie, ...filtered].slice(0, 50); // Keep last 50 items
         storage.set('watch_history', JSON.stringify(newHistory));
         set({ watchHistory: newHistory });
       },
@@ -133,6 +154,28 @@ export const useAppStore = create<AppState>()(
       clearHistory: () => {
         storage.remove('watch_history');
         set({ watchHistory: [] });
+      },
+
+      favorites: JSON.parse(storage.getString('favorites') || '[]'),
+      addFavorite: (movie) => {
+        const currentFavorites = get().favorites;
+        if (currentFavorites.some(item => item._id === movie._id)) return;
+        
+        const newFavorites = [movie, ...currentFavorites];
+        storage.set('favorites', JSON.stringify(newFavorites));
+        set({ favorites: newFavorites });
+      },
+      removeFavorite: (id) => {
+        const newFavorites = get().favorites.filter(item => item._id !== id);
+        storage.set('favorites', JSON.stringify(newFavorites));
+        set({ favorites: newFavorites });
+      },
+      isFavorite: (id) => {
+        return get().favorites.some(item => item._id === id);
+      },
+      clearFavorites: () => {
+        storage.remove('favorites');
+        set({ favorites: [] });
       },
     }),
     {

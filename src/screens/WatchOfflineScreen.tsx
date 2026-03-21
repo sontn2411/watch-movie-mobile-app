@@ -8,6 +8,7 @@ import {
   StatusBar,
   TouchableWithoutFeedback,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import Video, {
   VideoRef,
@@ -20,6 +21,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useDownloadStore, DownloadTask } from '@/store/useDownloadStore';
+import { useAppStore } from '@/store/useAppStore';
 import {
   ChevronLeft,
   Play,
@@ -47,6 +49,7 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
   const videoRef = useRef<VideoRef>(null);
   const { colors, isDark } = useTheme();
   const { tasks } = useDownloadStore();
+  const { watchHistory, addToHistory } = useAppStore();
 
   const [activeUrl, setActiveUrl] = useState(url);
   const [activeEpName, setActiveEpName] = useState(episodeName);
@@ -56,6 +59,10 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
   const [isBuffering, setIsBuffering] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const currentTimeRef = useRef(0);
+  const durationRef = useRef(0);
+  const hasPromptedResume = useRef(false);
 
   // Filter episodes for this movie
   const movieEpisodes = useMemo(() => {
@@ -74,6 +81,8 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
     setActiveUrl(playbackUrl);
     setActiveEpName(task.episodeName);
     setCurrentTime(0);
+    currentTimeRef.current = 0;
+    hasPromptedResume.current = false;
     setIsBuffering(true);
   };
 
@@ -86,11 +95,32 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
 
   const onProgress = (data: { currentTime: number }) => {
     setCurrentTime(data.currentTime);
+    currentTimeRef.current = data.currentTime;
   };
 
   const onLoad = (data: any) => {
     setDuration(data.duration);
+    durationRef.current = data.duration;
     setIsBuffering(false);
+
+    // Check resume playback
+    if (!hasPromptedResume.current) {
+      hasPromptedResume.current = true;
+      const historyItem = watchHistory.find(item => item._id === movieSlug || item.slug === movieSlug);
+      
+      if (historyItem && historyItem.currentTime && historyItem.duration && historyItem.episodeName === activeEpName) {
+        if (historyItem.currentTime > 5 && historyItem.duration - historyItem.currentTime > 10) {
+          Alert.alert(
+            'Tiếp tục xem?',
+            `Bạn đang xem dở tập ${activeEpName} ở phút thứ ${formatTime(historyItem.currentTime)}. Bạn có muốn xem tiếp không?`,
+            [
+              { text: 'Từ đầu', style: 'cancel', onPress: () => videoRef.current?.seek(0) },
+              { text: 'Xem tiếp', onPress: () => videoRef.current?.seek(historyItem.currentTime!) },
+            ]
+          );
+        }
+      }
+    }
   };
 
   const onBuffer = ({ isBuffering }: { isBuffering: boolean }) => {
@@ -139,6 +169,39 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
       Orientation.unlockAllOrientations();
     };
   }, []);
+
+  useEffect(() => {
+    const currentTask = movieEpisodes.find((ep: DownloadTask) => ep.episodeName === activeEpName);
+    if (currentTask && activeUrl) {
+      addToHistory({
+        _id: currentTask.movieSlug,
+        name: currentTask.movieName,
+        slug: currentTask.movieSlug,
+        thumb_url: currentTask.thumbUrl.split('/').pop() || '',
+        poster_url: '',
+        lastWatchedTime: Date.now(),
+        episodeName: activeEpName,
+        serverName: 'Offline',
+      });
+    }
+
+    return () => {
+      if (currentTask && currentTimeRef.current > 10 && durationRef.current > 0) {
+        addToHistory({
+          _id: currentTask.movieSlug,
+          name: currentTask.movieName,
+          slug: currentTask.movieSlug,
+          thumb_url: currentTask.thumbUrl.split('/').pop() || '',
+          poster_url: '',
+          lastWatchedTime: Date.now(),
+          episodeName: activeEpName,
+          serverName: 'Offline',
+          currentTime: currentTimeRef.current,
+          duration: durationRef.current,
+        });
+      }
+    };
+  }, [activeUrl, activeEpName, addToHistory, movieEpisodes]);
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>

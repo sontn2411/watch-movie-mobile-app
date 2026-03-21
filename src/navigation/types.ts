@@ -14,6 +14,7 @@ export type RootStackParamList = {
   Welcome: undefined;
   Auth: undefined;
   History: undefined;
+  Favorites: undefined;
   DownloadEpisodes: { movieSlug: string; movieName: string };
   WatchOffline: { url: string; title: string; episodeName: string; movieSlug: string };
 };

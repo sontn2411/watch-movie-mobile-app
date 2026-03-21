@@ -38,6 +38,7 @@ import { SectionHeader } from '@/components/common/SectionHeader';
 import { SettingItem } from '@/components/common/SettingItem';
 import { useToastStore } from '@/store/useToastStore';
 import { useTheme } from '@/hooks/useTheme';
+import { useDownloadStore } from '@/store/useDownloadStore';
 
 const AVATAR_URL = 'https://api.dicebear.com/7.x/avataaars/png?seed=WatchMovie&backgroundColor=transparent';
 
@@ -54,8 +55,11 @@ const ProfileScreen = () => {
     setTheme, 
     language, 
     setLanguage,
-    watchHistory
+    watchHistory,
+    favorites
   } = useAppStore();
+
+  const { tasks } = useDownloadStore();
 
   const [notifications, setNotifications] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -210,9 +214,9 @@ const ProfileScreen = () => {
       {/* Quick Stats */}
       <View className="flex-row px-6 mt-6 gap-3">
         {[
-          { label: 'Phim đã lưu', value: '42', color: colors.primary },
-          { label: 'Yêu thích', value: '15', color: '#EF4444' },
-          { label: 'Tải về', value: '7', color: colors.accent },
+          { label: 'Phim đã xem', value: watchHistory.length.toString(), color: colors.primary },
+          { label: 'Yêu thích', value: favorites.length.toString(), color: '#EF4444' },
+          { label: 'Tải về', value: tasks.filter(t => t.status === 'completed').length.toString(), color: colors.accent },
         ].map((item, i) => (
           <TouchableOpacity 
             key={i}
@@ -237,12 +241,15 @@ const ProfileScreen = () => {
         <SettingItem 
           icon={<Heart color="#EF4444" size={20} />} 
           label="Danh sách yêu thích" 
-          value="15 bộ phim"
+          value={`${favorites.length} bộ phim`}
+          onPress={() => navigation.navigate('Favorites')}
         />
         <SettingItem 
           icon={<Download color={colors.accent} size={20} />} 
           label="Phim đã tải về" 
-          value="7 bộ phim"
+          value={`${tasks.length} bộ phim`}
+          // @ts-ignore
+          onPress={() => navigation.navigate('Tải về')}
           isLast
         />
       </View>

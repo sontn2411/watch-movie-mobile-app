@@ -2,11 +2,22 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { movieService } from '@/services/movieService';
 import { Slug } from '@/types/movies';
 
-export const useInfiniteMovieList = (slug: Slug, limit = 24) => {
+export const useInfiniteMovieList = (
+  slug: Slug, 
+  limit = 24,
+  filters?: { category?: string; country?: string; year?: string }
+) => {
   return useInfiniteQuery({
-    queryKey: ['movies-infinite', slug, limit],
+    queryKey: ['movies-infinite', slug, limit, filters],
     queryFn: ({ pageParam = 1 }) =>
-      movieService.getListMovieBySlug({ slug, limit, page: pageParam }),
+      movieService.getListMovieBySlug({ 
+        slug, 
+        limit, 
+        page: pageParam, 
+        category: filters?.category, 
+        country: filters?.country, 
+        year: filters?.year 
+      }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const { currentPage, totalItems, totalItemsPerPage } = lastPage.data.params.pagination;
