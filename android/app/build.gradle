@@ -116,4 +116,11 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // Media3 for HLS Download
+    def media3_version = "1.4.1"
+    implementation "androidx.media3:media3-exoplayer:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-hls:$media3_version"
+    implementation "androidx.media3:media3-datasource:$media3_version"
+    implementation "androidx.media3:media3-common:$media3_version"
 }

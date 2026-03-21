@@ -11,7 +11,11 @@ import {
   TouchableWithoutFeedback,
   useWindowDimensions,
 } from 'react-native';
-import Video, { VideoRef, ResizeMode } from 'react-native-video';
+import Video, {
+  VideoRef,
+  ResizeMode,
+  SelectedVideoTrackType,
+} from 'react-native-video';
 import Slider from '@react-native-community/slider';
 import Orientation from 'react-native-orientation-locker';
 import { WebView } from 'react-native-webview';
@@ -31,6 +35,8 @@ import {
   RotateCw,
   Maximize,
   Minimize,
+  Settings,
+  Check,
 } from 'lucide-react-native';
 import { useMovieDetails } from '@/hooks/useMovies';
 import { useAppStore } from '@/store/useAppStore';
@@ -70,6 +76,14 @@ const WatchScreen = ({ route, navigation }: Props) => {
   const [isBuffering, setIsBuffering] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [videoTracks, setVideoTracks] = useState<any[]>([]);
+  const [selectedVideoTrack, setSelectedVideoTrack] = useState<{
+    type: SelectedVideoTrackType;
+    value?: number | string;
+  }>({
+    type: SelectedVideoTrackType.AUTO,
+  });
 
   // ... (keeping existing effects/handlers)
 
@@ -83,9 +97,12 @@ const WatchScreen = ({ route, navigation }: Props) => {
     setCurrentTime(data.currentTime);
   };
 
-  const onLoad = (data: { duration: number }) => {
+  const onLoad = (data: any) => {
     setDuration(data.duration);
     setIsBuffering(false);
+    if (data.videoTracks) {
+      setVideoTracks(data.videoTracks);
+    }
   };
 
   const onBuffer = ({ isBuffering }: { isBuffering: boolean }) => {
@@ -214,6 +231,7 @@ const WatchScreen = ({ route, navigation }: Props) => {
                 onLoad={onLoad}
                 onBuffer={onBuffer}
                 repeat={false}
+                selectedVideoTrack={selectedVideoTrack}
               />
             )}
 
@@ -259,6 +277,12 @@ const WatchScreen = ({ route, navigation }: Props) => {
                       Tập {activeEpName}
                     </Text>
                   </View>
+                  <TouchableOpacity
+                    onPress={() => setShowQualityMenu(true)}
+                    className="p-2"
+                  >
+                    <Settings color="white" size={24} />
+                  </TouchableOpacity>
                 </View>
 
                 {/* Middle Controls (Always White as player is dark) */}
@@ -332,6 +356,85 @@ const WatchScreen = ({ route, navigation }: Props) => {
             )}
           </View>
         </TouchableWithoutFeedback>
+
+        {/* Quality Selection Menu */}
+        {showQualityMenu && (
+          <Animated.View
+            entering={FadeIn}
+            exiting={FadeOut}
+            className="absolute inset-0 z-[100] items-center justify-center bg-black/80"
+          >
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={() => setShowQualityMenu(false)}
+              style={StyleSheet.absoluteFill}
+            />
+            <View
+              className="w-4/5 max-h-[70%] bg-[#1E293B] rounded-3xl overflow-hidden border border-white/10"
+              style={{ elevation: 5 }}
+            >
+              <View className="p-5 border-b border-white/5 flex-row items-center justify-between">
+                <Text className="text-white font-black text-lg">Chất lượng</Text>
+                <TouchableOpacity onPress={() => setShowQualityMenu(false)}>
+                  <Text className="text-primary font-bold">Xong</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView bounces={false}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedVideoTrack({ type: SelectedVideoTrackType.AUTO });
+                    setShowQualityMenu(false);
+                  }}
+                  className="flex-row items-center justify-between p-5 border-b border-white/5"
+                >
+                  <Text
+                    className={`text-base ${selectedVideoTrack.type === SelectedVideoTrackType.AUTO ? 'text-primary font-bold' : 'text-white/70'}`}
+                  >
+                    Tự động (Auto)
+                  </Text>
+                  {selectedVideoTrack.type === SelectedVideoTrackType.AUTO && (
+                    <Check color={colors.primary} size={20} />
+                  )}
+                </TouchableOpacity>
+
+                {videoTracks
+                  .filter(track => track.height > 0)
+                  .sort((a, b) => b.height - a.height)
+                  .map((track, idx) => {
+                    const isSelected =
+                      selectedVideoTrack.type ===
+                        SelectedVideoTrackType.RESOLUTION &&
+                      selectedVideoTrack.value === track.height;
+                    return (
+                      <TouchableOpacity
+                        key={track.trackId || idx}
+                        onPress={() => {
+                          setSelectedVideoTrack({
+                            type: SelectedVideoTrackType.RESOLUTION,
+                            value: track.height,
+                          });
+                          setShowQualityMenu(false);
+                        }}
+                        className="flex-row items-center justify-between p-5 border-b border-white/5"
+                      >
+                        <Text
+                          className={`text-base ${isSelected ? 'text-primary font-bold' : 'text-white/70'}`}
+                        >
+                          {track.height}p
+                          {track.bitrate
+                            ? ` (${Math.round(track.bitrate / 1000)} kbps)`
+                            : ''}
+                        </Text>
+                        {isSelected && (
+                          <Check color={colors.primary} size={20} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+              </ScrollView>
+            </View>
+          </Animated.View>
+        )}
       </View>
 
       {!isFullscreen && (
