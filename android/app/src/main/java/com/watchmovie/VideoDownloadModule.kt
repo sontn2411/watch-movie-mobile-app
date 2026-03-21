@@ -60,7 +60,7 @@ class VideoDownloadModule(reactContext: ReactApplicationContext) : ReactContextB
         )
 
         downloadHelper.prepare(object : DownloadHelper.Callback {
-            override fun onPrepared(helper: DownloadHelper) {
+            override fun onPrepared(helper: DownloadHelper, p1: Boolean) {
                 // Configure parameters to prefer highest bitrate
                 val trackSelectionParameters = TrackSelectionParameters.Builder(reactApplicationContext)
                     .setMaxVideoBitrate(Int.MAX_VALUE)
@@ -106,7 +106,7 @@ class VideoDownloadModule(reactContext: ReactApplicationContext) : ReactContextB
             reactApplicationContext,
             VideoDownloadService::class.java,
             taskId,
-            DownloadRequest.STOP_REASON_NONE,
+            Download.STOP_REASON_NONE,
             /* foreground= */ true
         )
     }

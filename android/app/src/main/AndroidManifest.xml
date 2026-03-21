@@ -24,15 +24,15 @@
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
-      <service
-        android:name=".VideoDownloadService"
-        android:exported="false"
-        android:foregroundServiceType="dataSync">
-        <intent-filter>
-          <action android:name="androidx.media3.exoplayer.downloadService.action.INIT" />
-          <category android:name="android.intent.category.DEFAULT" />
-        </intent-filter>
-      </service>
     </activity>
+    <service
+      android:name=".VideoDownloadService"
+      android:exported="false"
+      android:foregroundServiceType="dataSync">
+      <intent-filter>
+        <action android:name="androidx.media3.exoplayer.downloadService.action.INIT" />
+        <category android:name="android.intent.category.DEFAULT" />
+      </intent-filter>
+    </service>
   </application>
 </manifest>
