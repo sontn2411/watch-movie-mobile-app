@@ -4,6 +4,7 @@ import MovieCard from './MovieCard';
 import LandscapeCard from './sliders/LandscapeCard';
 import RankedCard from './sliders/RankedCard';
 import FeaturedCard from './sliders/FeaturedCard';
+import { FlashList } from '@shopify/flash-list';
 import { ChevronRight } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
 import { useNavigation } from '@react-navigation/native';
@@ -68,6 +69,44 @@ const MovieRow: React.FC<MovieRowProps> = ({
 
   if (!movies || movies.length === 0) return null;
 
+  const renderItem = ({ item, index }: { item: any; index: number }) => {
+    switch (variant) {
+      case 'landscape':
+        return (
+          <LandscapeCard
+            key={item._id}
+            movie={item}
+            imageDomain={imageDomain}
+          />
+        );
+      case 'ranked':
+        return (
+          <RankedCard
+            key={item._id}
+            movie={item}
+            imageDomain={imageDomain}
+            rank={index + 1}
+          />
+        );
+      case 'featured':
+        return (
+          <FeaturedCard
+            key={item._id}
+            movie={item}
+            imageDomain={imageDomain}
+          />
+        );
+      default:
+        return (
+          <MovieCard
+            key={item._id}
+            movie={item}
+            imageDomain={imageDomain}
+          />
+        );
+    }
+  };
+
   return (
     <View className="mb-8">
       <View className="flex-row justify-between items-center px-6 mb-4">
@@ -83,50 +122,16 @@ const MovieRow: React.FC<MovieRowProps> = ({
         </TouchableOpacity>
       </View>
 
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 24 }}
-      >
-        {movies.map((movie, index) => {
-          switch (variant) {
-            case 'landscape':
-              return (
-                <LandscapeCard
-                  key={movie._id}
-                  movie={movie}
-                  imageDomain={imageDomain}
-                />
-              );
-            case 'ranked':
-              return (
-                <RankedCard
-                  key={movie._id}
-                  movie={movie}
-                  imageDomain={imageDomain}
-                  rank={index + 1}
-                />
-              );
-            case 'featured':
-              return (
-                <FeaturedCard
-                  key={movie._id}
-                  movie={movie}
-                  imageDomain={imageDomain}
-                />
-              );
-            default:
-              return (
-                <MovieCard
-                  key={movie._id}
-                  movie={movie}
-                  imageDomain={imageDomain}
-                />
-              );
-          }
-        })}
-      </ScrollView>
+      <View style={{ height: variant === 'landscape' ? 180 : 260, width: '100%' }}>
+        <FlashList
+          data={movies}
+          renderItem={renderItem}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 24 }} // eslint-disable-line react-native/no-inline-styles
+          keyExtractor={(item) => item._id}
+        />
+      </View>
     </View>
   );
 };

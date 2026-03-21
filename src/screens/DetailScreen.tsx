@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import LinearGradient from 'react-native-linear-gradient';
 import { BlurView } from '@react-native-community/blur';
+import MetaPill from '@/components/common/MetaPill';
 import Animated, {
   FadeInUp,
   FadeIn,
@@ -54,21 +55,7 @@ const BACKDROP_HEIGHT = height * 0.45;
 type Props = NativeStackScreenProps<RootStackParamList, 'Details'>;
 type TabType = 'info' | 'episodes';
 
-// Memoized Metadata Pill
-const MetaPill = React.memo(({ icon: Icon, text, color, bgColor, borderColor, textColor }: any) => {
-  const { colors, isDark } = useTheme();
-  const activeColor = color || colors.primary;
-  const activeBg = bgColor || (isDark ? 'bg-white/5' : 'bg-black/5');
-  const activeBorder = borderColor || (isDark ? 'border-white/10' : 'border-black/5');
-  const activeText = textColor || 'text-text';
-
-  return (
-    <View className={`flex-row items-center ${activeBg} border ${activeBorder} px-3 py-1.5 rounded-xl mr-2 mb-2`}>
-      <Icon color={activeColor} size={14} fill={activeColor === colors.primary && String(text).includes('.') ? activeColor : 'none'} />
-      <Text className={`${activeText} text-[11px] font-bold ml-1.5`}>{text}</Text>
-    </View>
-  );
-});
+// Memoized Metadata Pill removed - now using common MetaPill
 
 const DetailScreen = ({ route, navigation }: Props) => {
   const { id } = route.params;
