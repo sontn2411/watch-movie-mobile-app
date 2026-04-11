@@ -34,6 +34,10 @@ class VideoDownloadModule: RCTEventEmitter {
         return true
     }
     
+    override func constantsToExport() -> [AnyHashable : Any]! {
+        return ["homeDirectory": NSHomeDirectory()]
+    }
+    
     @objc
     func startDownload(_ url: String, taskId: String) {
         if let downloadUrl = URL(string: url) {

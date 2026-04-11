@@ -1,4 +1,4 @@
-import { NativeModules, Platform, NativeEventEmitter } from 'react-native';
+import { NativeModules, Platform, NativeEventEmitter, PermissionsAndroid } from 'react-native';
 import { useDownloadStore, DownloadTask } from '../store/useDownloadStore';
 
 const { VideoDownloadModule } = NativeModules;
@@ -30,6 +30,50 @@ class DownloadService {
     }
   }
 
+  resolveFilePath(path?: string): string | undefined {
+    if (!path) return undefined;
+    if (Platform.OS === 'ios') {
+      if (path.startsWith('file://')) return path;
+
+      const homeDir = VideoDownloadModule?.homeDirectory || '';
+
+      // 1. If it already starts with the current homeDir, it's correct
+      if (path.startsWith(homeDir)) return path;
+
+      // 2. If it's a relative path starting with /Library or /Documents, prepend homeDir
+      if (path.startsWith('/Library') || path.startsWith('/Documents')) {
+        return `${homeDir}${path}`;
+      }
+
+      // 3. Recovery: If it's an old absolute path from a previous build/install
+      // Check for the common sandbox pattern: /Containers/Data/Application/UUID/...
+      if (path.includes('/Containers/Data/Application/')) {
+        const parts = path.split('/Containers/Data/Application/');
+        if (parts.length > 1) {
+          // parts[1] is UUID/Library/... or UUID/Documents/...
+          const subPathWithUUID = parts[1];
+          const firstSlashIndex = subPathWithUUID.indexOf('/');
+          if (firstSlashIndex !== -1) {
+            const relativeSubPath = subPathWithUUID.substring(firstSlashIndex);
+            return `${homeDir}${relativeSubPath}`;
+          }
+        }
+      }
+    }
+    return path;
+  }
+
+  resolvePlaybackUrl(task: DownloadTask): string {
+    const filePath = this.resolveFilePath(task.filePath);
+    if (filePath) {
+      // Ensure the path is URL-encoded so that native video players (like RCTVideo)
+      // don't fail when parsing file:// URIs containing spaces or special characters.
+      const safePath = encodeURI(filePath);
+      return safePath.startsWith('file://') ? safePath : `file://${safePath}`;
+    }
+    return task.videoUrl;
+  }
+
   async startDownload(taskId: string) {
     const task = useDownloadStore.getState().tasks.find((t) => t.id === taskId);
     if (!task || task.status === 'downloading' || task.status === 'completed') return;
@@ -37,6 +81,24 @@ class DownloadService {
     useDownloadStore.getState().updateTask(taskId, { status: 'downloading', progress: 0 });
 
     try {
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          {
+            title: 'Quyền thông báo',
+            message: 'Ứng dụng cần quyền thông báo để hiển thị tiến trình tải phim.',
+            buttonNeutral: 'Hỏi lại sau',
+            buttonNegative: 'Hủy',
+            buttonPositive: 'Đồng ý',
+          }
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          console.warn('POST_NOTIFICATIONS permission denied');
+          useDownloadStore.getState().updateTask(taskId, { status: 'error' });
+          return;
+        }
+      }
+
       if (VideoDownloadModule) {
         VideoDownloadModule.startDownload(task.videoUrl, taskId);
       } else {

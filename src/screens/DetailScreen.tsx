@@ -76,6 +76,7 @@ const DetailScreen = ({ route, navigation }: Props) => {
 
   const [activeTab, setActiveTab] = useState<TabType>('info');
   const [activeServer, setActiveServer] = useState(0);
+  const [downloadActiveServer, setDownloadActiveServer] = useState(0);
   const [isDesc, setIsDesc] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -147,13 +148,21 @@ const DetailScreen = ({ route, navigation }: Props) => {
     playButtonScale.value = withSpring(1);
   };
 
-  // Memoized Sorted Episodes
+  // Memoized Sorted Episodes for Watch
   const sortedEpisodes = useMemo(() => {
     const episodes =
       data?.data.item.episodes?.[activeServer]?.server_data || [];
     if (!isDesc) return episodes;
     return [...episodes].reverse();
   }, [data, activeServer, isDesc]);
+
+  // Memoized Sorted Episodes for Download Modal
+  const downloadSortedEpisodes = useMemo(() => {
+    const episodes =
+      data?.data.item.episodes?.[downloadActiveServer]?.server_data || [];
+    if (!isDesc) return episodes;
+    return [...episodes].reverse();
+  }, [data, downloadActiveServer, isDesc]);
 
   // Tính trạng thái phim chưa phát hành (episode trả về nhưng không có link)
   const isUnreleased = useMemo(() => {
@@ -696,17 +705,52 @@ const DetailScreen = ({ route, navigation }: Props) => {
               </View>
             </View>
 
-            <View style={{ height: height * 0.65 }}>
+            {/* Download Server Selection */}
+            {movie.episodes && movie.episodes.length > 1 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="mb-4"
+                style={{ maxHeight: 40, minHeight: 40 }}
+              >
+                {movie.episodes.map((server, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={() => setDownloadActiveServer(idx)}
+                    className={`px-4 py-2 rounded-xl mr-2 border align-middle justify-center ${downloadActiveServer === idx ? 'bg-primary border-primary' : 'bg-surface border-border'}`}
+                  >
+                    <Text
+                      className={`text-[11px] font-black uppercase tracking-widest ${downloadActiveServer === idx ? 'text-white' : 'text-muted'}`}
+                    >
+                      {server.server_name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+
+            <View
+              style={{
+                height:
+                  height * 0.65 -
+                  (movie.episodes && movie.episodes.length > 1 ? 56 : 0),
+              }}
+            >
               {/* @ts-ignore */}
               <FlashList
-                data={sortedEpisodes}
+                data={downloadSortedEpisodes}
                 // @ts-ignore
                 keyExtractor={item => item.name}
                 renderItem={({ item }: { item: any }) => {
-                  const taskId = `${movie.slug}-${item.name}`;
+                  const currentServerObj = movie.episodes?.[downloadActiveServer];
+                  const currentServerName = currentServerObj?.server_name || '';
+                  // Sanitize Server Name to prevent weird file paths from file system rejection
+                  const safeServerId = currentServerName.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase() || 'default';
+                  const taskId = `${movie.slug}-${safeServerId}-${item.name}`;
                   const task = tasks.find(t => t.id === taskId);
                   const isCompleted = task?.status === 'completed';
                   const isDownloading = task?.status === 'downloading';
+                  const isDownloadable = !!item.link_m3u8;
 
                   return (
                     <View className="flex-row items-center justify-between py-4 border-b border-white/5">
@@ -749,6 +793,12 @@ const DetailScreen = ({ route, navigation }: Props) => {
                               Đã tải
                             </Text>
                           </View>
+                        ) : !isDownloadable ? (
+                          <View className="bg-white/5 px-2 py-1.5 rounded-xl border border-white/10">
+                            <Text className="text-muted text-[9px] font-black uppercase text-center max-w-[60px]">
+                              Không hỗ trợ
+                            </Text>
+                          </View>
                         ) : (
                           <TouchableOpacity
                             onPress={() => {
@@ -757,6 +807,7 @@ const DetailScreen = ({ route, navigation }: Props) => {
                                 movieName: movie.name,
                                 movieSlug: movie.slug,
                                 episodeName: item.name,
+                                serverName: currentServerName,
                                 thumbUrl: `${imageDomain}/uploads/movies/${movie.thumb_url}`,
                                 videoUrl: item.link_m3u8 || item.link_embed,
                               });

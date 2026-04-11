@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, InteractionManager, Platform } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { CATEGORIES } from '@/constants/movieConfig';
 import { useMovieList } from '@/hooks/useMovies';
@@ -12,6 +12,17 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
 
   const { data: heroData } = useMovieList('phim-moi', 5);
+
+  const [isReady, setIsReady] = React.useState(Platform.OS === 'ios');
+
+  React.useEffect(() => {
+    if (Platform.OS !== 'ios') {
+      const task = InteractionManager.runAfterInteractions(() => {
+        setIsReady(true);
+      });
+      return () => task.cancel();
+    }
+  }, []);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -34,7 +45,9 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-background">
       <FlashList
-        data={CATEGORIES}
+        data={isReady ? CATEGORIES : []}
+        // @ts-ignore - The property definitely exists in runtime, type def is flawed in this RN version
+        estimatedItemSize={250}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
         onRefresh={onRefresh}

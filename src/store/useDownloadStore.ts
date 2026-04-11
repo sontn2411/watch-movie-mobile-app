@@ -17,6 +17,7 @@ export interface DownloadTask {
   movieName: string;
   movieSlug: string;
   episodeName: string;
+  serverName?: string;
   thumbUrl: string;
   videoUrl: string;
   status: DownloadStatus;

@@ -54,13 +54,18 @@ const WelcomeScreen = ({ navigation }: Props) => {
       >
         <View className="flex-1 bg-transparent">
           {/* Dynamic spacer: smaller in landscape */}
-          <View style={{ height: isLandscape ? height * 0.4 : height * 0.55 }} className="w-full" />
+          <View
+            style={{ height: isLandscape ? height * 0.4 : height * 0.55 }}
+            className="w-full"
+          />
 
           <View
-            style={{ marginTop: isLandscape ? -(height * 0.1) : -(height * 0.15) }}
+            style={{
+              marginTop: isLandscape ? -(height * 0.1) : -(height * 0.15),
+            }}
             className="flex flex-col gap-6 justify-center w-full items-center px-8 pb-10"
           >
-            <Animated.View 
+            <Animated.View
               entering={FadeInDown.delay(300).duration(1000)}
               style={{
                 width: isLandscape ? width * 0.15 : width * 0.25,
@@ -82,14 +87,16 @@ const WelcomeScreen = ({ navigation }: Props) => {
               />
             </Animated.View>
 
-            <Animated.View 
+            <Animated.View
               entering={FadeInDown.delay(500).duration(1000)}
               className={`${isLandscape ? 'mb-4' : 'mb-10'} items-center`}
             >
               <Text
-                className={`text-text ${isLandscape ? 'text-4xl' : 'text-5xl'} font-black tracking-[0.3em]`}
-                style={{ 
-                  textShadowColor: isDark ? 'rgba(225, 29, 72, 0.4)' : 'rgba(0, 0, 0, 0.1)',
+                className={`text-text ${isLandscape ? 'text-s-xxxl' : 'text-s-display'} font-black tracking-[0.15em]`}
+                style={{
+                  textShadowColor: isDark
+                    ? 'rgba(225, 29, 72, 0.4)'
+                    : 'rgba(0, 0, 0, 0.1)',
                   textShadowOffset: { width: 0, height: 4 },
                   textShadowRadius: 10,
                 }}
@@ -97,13 +104,13 @@ const WelcomeScreen = ({ navigation }: Props) => {
                 CINEMA
               </Text>
               <Text
-                className={`text-muted text-[10px] font-bold tracking-[0.6em] uppercase mt-4 opacity-80`}
+                className={`text-muted text-s-xs text-center font-bold tracking-[0.4em] uppercase mt-4 opacity-80`}
               >
                 Khám phá điện ảnh đỉnh cao
               </Text>
             </Animated.View>
 
-            <Animated.View 
+            <Animated.View
               entering={FadeInUp.delay(800).duration(1000)}
               className={`w-full flex flex-col ${isLandscape ? 'gap-4 max-w-lg' : 'gap-6'}`}
             >
@@ -142,7 +149,6 @@ const WelcomeScreen = ({ navigation }: Props) => {
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   logo: {

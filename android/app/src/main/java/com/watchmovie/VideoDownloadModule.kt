@@ -17,6 +17,8 @@ import androidx.media3.exoplayer.source.TrackGroupArray
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import android.os.Handler
+import android.os.Looper
 
 @UnstableApi
 class VideoDownloadModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
@@ -25,14 +27,53 @@ class VideoDownloadModule(reactContext: ReactApplicationContext) : ReactContextB
         return "VideoDownloadModule"
     }
 
+    private val handler = Handler(Looper.getMainLooper())
+    private val progressRunnable = object : Runnable {
+        override fun run() {
+            var hasActiveDownloads = false
+            val manager = DownloadManagerSingleton.getDownloadManager(reactApplicationContext)
+            
+            for (download in manager.currentDownloads) {
+                if (download.state == Download.STATE_DOWNLOADING) {
+                    hasActiveDownloads = true
+                    val params = Arguments.createMap()
+                    params.putString("taskId", download.request.id)
+                    var progress = download.percentDownloaded.toDouble() / 100.0
+                    if (progress < 0) progress = 0.0
+                    params.putDouble("progress", progress)
+                    params.putString("status", "downloading")
+
+                    try {
+                        reactApplicationContext
+                            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                            .emit("onDownloadProgress", params)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+
+            if (hasActiveDownloads) {
+                handler.postDelayed(this, 1000)
+            }
+        }
+    }
+
     private val downloadListener = object : DownloadManager.Listener {
         override fun onDownloadChanged(downloadManager: DownloadManager, download: Download, finalException: Exception?) {
             val params = Arguments.createMap()
             params.putString("taskId", download.request.id)
-            params.putDouble("progress", download.percentDownloaded.toDouble() / 100.0)
+            var progress = download.percentDownloaded.toDouble() / 100.0
+            if (progress < 0) progress = 0.0
+            params.putDouble("progress", progress)
             
             val stateString = when (download.state) {
-                Download.STATE_DOWNLOADING -> "downloading"
+                Download.STATE_DOWNLOADING -> {
+                    // Start polling progress if downloading
+                    handler.removeCallbacks(progressRunnable)
+                    handler.post(progressRunnable)
+                    "downloading"
+                }
                 Download.STATE_COMPLETED -> "completed"
                 Download.STATE_FAILED -> "error"
                 Download.STATE_STOPPED -> "paused"
@@ -40,9 +81,13 @@ class VideoDownloadModule(reactContext: ReactApplicationContext) : ReactContextB
             }
             params.putString("status", stateString)
 
-            reactApplicationContext
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-                .emit("onDownloadProgress", params)
+            try {
+                reactApplicationContext
+                    .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+                    .emit("onDownloadProgress", params)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

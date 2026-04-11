@@ -7,6 +7,7 @@ import {
   ScrollView,
   useWindowDimensions,
   Alert,
+  InteractionManager,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/types';
@@ -26,6 +27,17 @@ const AuthScreen = ({ navigation }: Props) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const setHasSeenWelcome = useAppStore(state => state.setHasSeenWelcome);
   const { colors, isDark } = useTheme();
+
+  const [isReady, setIsReady] = useState(Platform.OS === 'ios');
+
+  React.useEffect(() => {
+    if (Platform.OS !== 'ios') {
+      const task = InteractionManager.runAfterInteractions(() => {
+        setIsReady(true);
+      });
+      return () => task.cancel();
+    }
+  }, []);
 
   const handleSuccess = () => {
     setHasSeenWelcome(true);
@@ -69,18 +81,20 @@ const AuthScreen = ({ navigation }: Props) => {
             className="flex-1 justify-center pb-12"
             layout={Layout.springify()}
           >
-            {mode === 'login' ? (
-              <LoginForm
-                onSuccess={handleSuccess}
-                onForgotPassword={() => Alert.alert('Thông báo', 'Tính năng đang được phát triển')}
-                onSwitchMode={() => setMode('register')}
-              />
-            ) : (
-              <RegisterForm
-                onSuccess={handleSuccess}
-                onSwitchMode={() => setMode('login')}
-              />
-            )}
+            {isReady ? (
+              mode === 'login' ? (
+                <LoginForm
+                  onSuccess={handleSuccess}
+                  onForgotPassword={() => Alert.alert('Thông báo', 'Tính năng đang được phát triển')}
+                  onSwitchMode={() => setMode('register')}
+                />
+              ) : (
+                <RegisterForm
+                  onSuccess={handleSuccess}
+                  onSwitchMode={() => setMode('login')}
+                />
+              )
+            ) : null}
           </Animated.View>
         </View>
       </ScrollView>

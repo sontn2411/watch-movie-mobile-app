@@ -6,7 +6,7 @@ class VideoDownloadManager: NSObject, AVAssetDownloadDelegate {
     static let shared = VideoDownloadManager()
     
     private var downloadSession: AVAssetDownloadURLSession!
-    private var downloadTasks = [AVAssetDownloadTask: String]()
+    private var downloadTasks = [AVAssetDownloadTask: String]() 
     
     override init() {
         super.init()
@@ -49,17 +49,26 @@ class VideoDownloadManager: NSObject, AVAssetDownloadDelegate {
     
     func deleteDownloadedFile(atPath path: String) {
         let fileManager = FileManager.default
-        let url = URL(fileURLWithPath: path)
+        
+        // Resolve path if it's relative
+        var fullPath = path
+        if !path.hasPrefix("/") {
+            fullPath = NSHomeDirectory() + (path.hasPrefix("/") ? "" : "/") + path
+        }
+        
+        // Always standardize to handle /private/var vs /var
+        fullPath = URL(fileURLWithPath: fullPath).standardized.path
+        let url = URL(fileURLWithPath: fullPath)
         
         do {
-            if fileManager.fileExists(atPath: path) {
+            if fileManager.fileExists(atPath: fullPath) {
                 try fileManager.removeItem(at: url)
-                print("VideoDownloadManager: Successfully deleted file at \(path)")
+                print("VideoDownloadManager: Successfully deleted file at \(fullPath)")
             } else {
-                print("VideoDownloadManager: File does not exist at \(path)")
+                print("VideoDownloadManager: File does not exist at \(fullPath)")
             }
         } catch {
-            print("VideoDownloadManager: Error deleting file at \(path): \(error.localizedDescription)")
+            print("VideoDownloadManager: Error deleting file at \(fullPath): \(error.localizedDescription)")
         }
     }
     
@@ -67,9 +76,21 @@ class VideoDownloadManager: NSObject, AVAssetDownloadDelegate {
     
     func urlSession(_ session: URLSession, assetDownloadTask: AVAssetDownloadTask, didFinishDownloadingTo location: URL) {
         if let taskId = downloadTasks[assetDownloadTask] {
+            let fullPath = location.path
+            let homePath = NSHomeDirectory()
+            
+            // Standardize paths to ensure prefix matching works (handles /private/var vs /var)
+            let standardizedFullPath = URL(fileURLWithPath: fullPath).standardized.path
+            let standardizedHomePath = URL(fileURLWithPath: homePath).standardized.path
+            
+            var relativePath = fullPath
+            if standardizedFullPath.hasPrefix(standardizedHomePath) {
+                relativePath = String(standardizedFullPath.dropFirst(standardizedHomePath.count))
+            }
+            
             NotificationCenter.default.post(name: NSNotification.Name("onDownloadFinished"), 
                                             object: nil, 
-                                            userInfo: ["taskId": taskId, "location": location.path])
+                                            userInfo: ["taskId": taskId, "location": relativePath])
         }
     }
     

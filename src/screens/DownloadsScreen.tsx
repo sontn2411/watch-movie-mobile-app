@@ -58,7 +58,10 @@ const DownloadsScreen = () => {
         className="flex-row items-center p-4 mb-3 rounded-2xl bg-white/5 border border-white/5"
       >
         <View className="flex-1">
-          <Text className="text-text text-base font-bold">Tập {task.episodeName}</Text>
+          <Text className="text-text text-base font-bold">
+            Tập {task.episodeName} 
+            {task.serverName ? <Text className="text-primary text-[10px] uppercase font-black tracking-widest"> • {task.serverName}</Text> : ''}
+          </Text>
           <Text className="text-muted text-xs mt-1">
              {isCompleted ? 'Sẵn sàng để xem' : `Đang tải... ${progress}%`}
           </Text>
@@ -67,7 +70,7 @@ const DownloadsScreen = () => {
             {isCompleted && (
                 <TouchableOpacity
                     onPress={() => {
-                        const playbackUrl = task.filePath ? (task.filePath.startsWith('file://') ? task.filePath : `file://${task.filePath}`) : task.videoUrl;
+                        const playbackUrl = downloadService.resolvePlaybackUrl(task);
                         navigation.navigate('WatchOffline', {
                             url: playbackUrl,
                             title: task.movieName,

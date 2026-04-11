@@ -21,6 +21,7 @@ import { RootStackParamList } from '@/navigation/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useDownloadStore, DownloadTask } from '@/store/useDownloadStore';
+import { downloadService } from '@/services/DownloadService';
 import { useAppStore } from '@/store/useAppStore';
 import {
   ChevronLeft,
@@ -38,6 +39,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { FlashList } from '@shopify/flash-list';
 import { ScrollView } from 'react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WatchOffline'>;
@@ -62,7 +64,6 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
 
   const currentTimeRef = useRef(0);
   const durationRef = useRef(0);
-  const hasPromptedResume = useRef(false);
 
   // Filter episodes for this movie
   const movieEpisodes = useMemo(() => {
@@ -77,12 +78,11 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
   }, [tasks, movieSlug]);
 
   const handleEpisodePress = (task: DownloadTask) => {
-    const playbackUrl = task.filePath ? (task.filePath.startsWith('file://') ? task.filePath : `file://${task.filePath}`) : task.videoUrl;
+    const playbackUrl = downloadService.resolvePlaybackUrl(task);
     setActiveUrl(playbackUrl);
     setActiveEpName(task.episodeName);
     setCurrentTime(0);
     currentTimeRef.current = 0;
-    hasPromptedResume.current = false;
     setIsBuffering(true);
   };
 
@@ -102,25 +102,6 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
     setDuration(data.duration);
     durationRef.current = data.duration;
     setIsBuffering(false);
-
-    // Check resume playback
-    if (!hasPromptedResume.current) {
-      hasPromptedResume.current = true;
-      const historyItem = watchHistory.find(item => item._id === movieSlug || item.slug === movieSlug);
-      
-      if (historyItem && historyItem.currentTime && historyItem.duration && historyItem.episodeName === activeEpName) {
-        if (historyItem.currentTime > 5 && historyItem.duration - historyItem.currentTime > 10) {
-          Alert.alert(
-            'Tiếp tục xem?',
-            `Bạn đang xem dở tập ${activeEpName} ở phút thứ ${formatTime(historyItem.currentTime)}. Bạn có muốn xem tiếp không?`,
-            [
-              { text: 'Từ đầu', style: 'cancel', onPress: () => videoRef.current?.seek(0) },
-              { text: 'Xem tiếp', onPress: () => videoRef.current?.seek(historyItem.currentTime!) },
-            ]
-          );
-        }
-      }
-    }
   };
 
   const onBuffer = ({ isBuffering }: { isBuffering: boolean }) => {
@@ -177,7 +158,7 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
         _id: currentTask.movieSlug,
         name: currentTask.movieName,
         slug: currentTask.movieSlug,
-        thumb_url: currentTask.thumbUrl.split('/').pop() || '',
+        thumb_url: currentTask.thumbUrl,
         poster_url: '',
         lastWatchedTime: Date.now(),
         episodeName: activeEpName,
@@ -186,12 +167,12 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
     }
 
     return () => {
-      if (currentTask && currentTimeRef.current > 10 && durationRef.current > 0) {
+      if (currentTask && currentTimeRef.current > 5 && durationRef.current > 0) {
         addToHistory({
           _id: currentTask.movieSlug,
           name: currentTask.movieName,
           slug: currentTask.movieSlug,
-          thumb_url: currentTask.thumbUrl.split('/').pop() || '',
+          thumb_url: currentTask.thumbUrl,
           poster_url: '',
           lastWatchedTime: Date.now(),
           episodeName: activeEpName,
@@ -207,7 +188,6 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar hidden={isFullscreen} barStyle="light-content" />
 
-      <TouchableWithoutFeedback onPress={toggleControls}>
         <View 
             style={{ 
                 height: isFullscreen ? height : videoHeight + (isFullscreen ? 0 : insets.top),
@@ -227,11 +207,19 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
                 repeat={false}
             />
 
+            {/* Touch catcher when hidden */}
+            {!showControls && (
+              <TouchableWithoutFeedback onPress={toggleControls}>
+                <View style={StyleSheet.absoluteFill} />
+              </TouchableWithoutFeedback>
+            )}
+
             {/* Buffering Indicator */}
             {isBuffering && (
                 <View
+                pointerEvents="none"
                 style={StyleSheet.absoluteFill}
-                className="items-center justify-center"
+                className="items-center justify-center z-10"
                 >
                 <ActivityIndicator color={colors.primary} size="large" />
                 </View>
@@ -242,143 +230,167 @@ const WatchOfflineScreen = ({ route, navigation }: Props) => {
                 <Animated.View
                 entering={FadeIn}
                 exiting={FadeOut}
+                pointerEvents="box-none"
                 style={[
                     StyleSheet.absoluteFill,
-                    { backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10 },
+                    { zIndex: 10 },
                 ]}
                 >
-                {/* Top Bar */}
-                <View 
-                    className="flex-row items-center px-6 py-4"
-                >
-                    <TouchableOpacity
-                    onPress={() =>
-                        isFullscreen
-                        ? setIsFullscreen(false)
-                        : navigation.goBack()
-                    }
-                    className="w-10 h-10 items-center justify-center rounded-full bg-white/10"
-                    >
-                    <ChevronLeft color="white" size={24} />
-                    </TouchableOpacity>
-                    <View className="ml-4 flex-1">
-                    <Text
-                        className="text-white font-black text-lg"
-                        numberOfLines={1}
-                    >
-                        {title}
-                    </Text>
-                    <Text className="text-white/70 text-xs mt-0.5 font-bold uppercase tracking-wider">
-                        Tập {activeEpName} • Offline
-                    </Text>
-                    </View>
-                </View>
+                {/* Background overlay that dismisses controls */}
+                <TouchableWithoutFeedback onPress={toggleControls}>
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)' }]} />
+                </TouchableWithoutFeedback>
 
-                {/* Middle Controls */}
-                <View className="flex-1 flex-row items-center justify-evenly">
-                    <TouchableOpacity onPress={seekBackward} className="p-4">
-                    <RotateCcw color="white" size={36} />
-                    </TouchableOpacity>
+                <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+                  {/* Top Bar */}
+                  <View 
+                      pointerEvents="box-none"
+                      className="flex-row items-center px-6 py-4"
+                  >
+                      <TouchableOpacity
+                      onPress={() =>
+                          isFullscreen
+                          ? setIsFullscreen(false)
+                          : navigation.goBack()
+                      }
+                      className="w-10 h-10 items-center justify-center rounded-full bg-white/10"
+                      >
+                      <ChevronLeft color="white" size={24} />
+                      </TouchableOpacity>
+                      <View className="ml-4 flex-1">
+                      <Text
+                          className="text-white font-black text-lg"
+                          numberOfLines={1}
+                      >
+                          {title}
+                      </Text>
+                      {(() => {
+                          const activeTask = tasks.find(t => t.movieSlug === movieSlug && t.episodeName === activeEpName);
+                          return (
+                            <Text className="text-white/70 text-xs mt-0.5 font-bold uppercase tracking-wider">
+                                Tập {activeEpName} {activeTask?.serverName ? `• ${activeTask.serverName}` : '• Offline'}
+                            </Text>
+                          );
+                      })()}
+                      </View>
+                  </View>
 
-                    <TouchableOpacity
-                    onPress={() => setPaused(!paused)}
-                    className="w-20 h-20 rounded-full items-center justify-center"
-                    style={{ backgroundColor: colors.primary }}
-                    >
-                    {paused ? (
-                        <Play color="white" size={40} fill="white" />
-                    ) : (
-                        <Pause color="white" size={40} fill="white" />
-                    )}
-                    </TouchableOpacity>
+                  {/* Middle Controls */}
+                  <View pointerEvents="box-none" className="flex-1 flex-row items-center justify-evenly">
+                      <TouchableOpacity onPress={seekBackward} className="p-4">
+                      <RotateCcw color="white" size={36} />
+                      </TouchableOpacity>
 
-                    <TouchableOpacity onPress={seekForward} className="p-4">
-                    <RotateCw color="white" size={36} />
-                    </TouchableOpacity>
-                </View>
+                      <TouchableOpacity
+                      onPress={() => setPaused(!paused)}
+                      className="w-20 h-20 rounded-full items-center justify-center"
+                      style={{ backgroundColor: colors.primary }}
+                      >
+                      {paused ? (
+                          <Play color="white" size={40} fill="white" />
+                      ) : (
+                          <Pause color="white" size={40} fill="white" />
+                      )}
+                      </TouchableOpacity>
 
-                {/* Bottom Bar */}
-                <View 
-                    style={{ paddingBottom: isFullscreen ? 30 : 20 }}
-                    className="px-6 py-4"
-                >
-                    <View className="flex-row items-center justify-between mb-4">
-                    <Text className="text-white text-xs font-bold tabular-nums">
-                        {formatTime(currentTime)}
-                    </Text>
-                    <Text className="text-white/50 text-xs font-bold tabular-nums">
-                        {formatTime(duration)}
-                    </Text>
-                    </View>
+                      <TouchableOpacity onPress={seekForward} className="p-4">
+                      <RotateCw color="white" size={36} />
+                      </TouchableOpacity>
+                  </View>
 
-                    <View className="flex-row items-center">
-                    <Slider
-                        style={{ flex: 1, height: 40 }}
-                        minimumValue={0}
-                        maximumValue={duration}
-                        value={currentTime}
-                        minimumTrackTintColor={colors.primary}
-                        maximumTrackTintColor="rgba(255,255,255,0.2)"
-                        thumbTintColor={colors.primary}
-                        onSlidingComplete={val => videoRef.current?.seek(val)}
-                    />
-                    <TouchableOpacity
-                        onPress={() => setIsFullscreen(!isFullscreen)}
-                        className="ml-6 w-10 h-10 items-center justify-center rounded-full bg-white/10"
-                    >
-                        {isFullscreen ? (
-                        <Minimize color="white" size={20} />
-                        ) : (
-                        <Maximize color="white" size={20} />
-                        )}
-                    </TouchableOpacity>
-                    </View>
+                  {/* Bottom Bar */}
+                  <View 
+                      pointerEvents="box-none"
+                      style={{ paddingBottom: isFullscreen ? 30 : 20 }}
+                      className="px-6 py-4"
+                  >
+                      <View className="flex-row items-center justify-between mb-4" pointerEvents="none">
+                      <Text className="text-white text-xs font-bold tabular-nums">
+                          {formatTime(currentTime)}
+                      </Text>
+                      <Text className="text-white/50 text-xs font-bold tabular-nums">
+                          {formatTime(duration)}
+                      </Text>
+                      </View>
+
+                      <View className="flex-row items-center" pointerEvents="box-none">
+                      <Slider
+                          style={{ flex: 1, height: 40 }}
+                          minimumValue={0}
+                          maximumValue={duration}
+                          value={currentTime}
+                          minimumTrackTintColor={colors.primary}
+                          maximumTrackTintColor="rgba(255,255,255,0.2)"
+                          thumbTintColor={colors.primary}
+                          onSlidingComplete={val => videoRef.current?.seek(val)}
+                      />
+                      <TouchableOpacity
+                          onPress={() => setIsFullscreen(!isFullscreen)}
+                          className="ml-6 w-10 h-10 items-center justify-center rounded-full bg-white/10"
+                      >
+                          {isFullscreen ? (
+                          <Minimize color="white" size={20} />
+                          ) : (
+                          <Maximize color="white" size={20} />
+                          )}
+                      </TouchableOpacity>
+                      </View>
+                  </View>
                 </View>
                 </Animated.View>
             )}
           </View>
         </View>
-      </TouchableWithoutFeedback>
 
       {/* Episode Playlist Section */}
       {!isFullscreen && (
-        <ScrollView 
-            className="flex-1 px-4 mt-6"
-            showsVerticalScrollIndicator={false}
-        >
-            <View className="flex-row items-center mb-4 px-1">
-                <Globe color={colors.primary} size={16} />
-                <Text className="text-text font-bold ml-2">
-                    Các tập đã tải
-                </Text>
-            </View>
-
-            <View className="flex-row flex-wrap items-center">
-                {movieEpisodes.map((ep: DownloadTask, eIdx: number) => {
-                    const btnWidth = (width - 32 - 32) / 4;
-                    const isActive = ep.episodeName === activeEpName;
+        <View className="flex-1 px-4 mt-6">
+            <FlashList
+                data={movieEpisodes}
+                // @ts-ignore
+                estimatedItemSize={48}
+                numColumns={4}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 40 }}
+                ListHeaderComponent={
+                    <View className="flex-row items-center mb-4 px-1">
+                        <Globe color={colors.primary} size={16} />
+                        <Text className="text-text font-bold ml-2">
+                            Các tập đã tải
+                        </Text>
+                    </View>
+                }
+                renderItem={({ item, index }) => {
+                    const isActive = item.episodeName === activeEpName;
                     return (
-                        <TouchableOpacity
-                            key={eIdx}
-                            onPress={() => handleEpisodePress(ep)}
-                            style={{ width: btnWidth, height: 40 }}
-                            className={`border rounded-xl items-center justify-center m-[4px] ${
-                                isActive
-                                    ? 'bg-primary border-primary'
-                                    : 'bg-surface border-border'
-                            }`}
-                            activeOpacity={0.7}
-                        >
-                            <Text
-                                className={`text-xs font-bold ${isActive ? 'text-white' : 'text-muted'}`}
+                        <View style={{ flex: 1, padding: 4 }}>
+                            <TouchableOpacity
+                                onPress={() => handleEpisodePress(item)}
+                                style={{ height: 40 }}
+                                className={`border rounded-xl items-center justify-center ${
+                                    isActive
+                                        ? 'bg-primary border-primary'
+                                        : 'bg-surface border-border'
+                                }`}
+                                activeOpacity={0.7}
                             >
-                                {ep.episodeName}
-                            </Text>
-                        </TouchableOpacity>
+                                <Text
+                                    className={`text-xs font-bold leading-none ${isActive ? 'text-white' : 'text-muted'}`}
+                                >
+                                    Tập {item.episodeName}
+                                </Text>
+                                {item.serverName && (
+                                    <Text className={`text-[8px] mt-1 font-black uppercase tracking-widest ${isActive ? 'text-white/70' : 'text-muted/50'}`}>
+                                        {item.serverName}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                     );
-                })}
-            </View>
-        </ScrollView>
+                }}
+                keyExtractor={(_, index) => index.toString()}
+            />
+        </View>
       )}
     </View>
   );
