@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "390634399417",
+    "project_id": "test-44614",
+    "storage_bucket": "test-44614.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:390634399417:android:c86a11bb3e423889ff5d68",
+        "android_client_info": {
+          "package_name": "com.watchmovie"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZWSBFxAHGFg5-8VNILRVDqTsYf3MLBCA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
